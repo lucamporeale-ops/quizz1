@@ -440,10 +440,10 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
   const score = answers.filter((a,i) => a.selected === questions[i].ok).length;
   const pct = Math.round((score/questions.length)*100);
   const [stars, label, lc] = pct>=80 ? [3,"¡EXCELENTE!",C.yellow] : pct>=60 ? [2,"APROBADO",C.green] : [1,"A REPASAR",C.red];
-  const [enviado, setEnviado] = useState(false);
+  const [sendStatus, setSendStatus] = useState("sending"); // sending | ok | error
 
-  // Guardar local siempre (para "Mis Intentos")
   useEffect(() => {
+    // Guardar local
     try {
       const session = answers.map((a,i)=>({
         nombre: playerName, tema: questions[i].tema, nro: i+1,
@@ -454,21 +454,25 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
       const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
       localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
     } catch(e) {}
-  }, []);
 
-  // Construir URL para enviar a GAS
-  const gasURL = (() => {
-    if (!GAS_URL) return null;
+    // Enviar a GAS silenciosamente
+    if (!GAS_URL) { setSendStatus("ok"); return; }
     const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-    const nombre    = encodeURIComponent(playerName);
-    return `${GAS_URL}?nombre=${nombre}&correctos=${correctos}&total=${score}`;
-  })();
+    const url = `${GAS_URL}?nombre=${encodeURIComponent(playerName)}&correctos=${correctos}&total=${score}`;
 
-  const handleEnviar = () => {
-    if (!gasURL) return;
-    window.open(gasURL, "_blank");
-    setEnviado(true);
-  };
+    fetch(url, { mode: "no-cors" })
+      .then(() => setSendStatus("ok"))
+      .catch(() => {
+        // fetch falló — intentar con XMLHttpRequest
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open("GET", url, true);
+          xhr.onload = () => setSendStatus("ok");
+          xhr.onerror = () => setSendStatus("error");
+          xhr.send();
+        } catch(e) { setSendStatus("error"); }
+      });
+  }, []);
 
   return (
     <div>
@@ -484,36 +488,16 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
           {score} / {questions.length}
           <span style={{fontSize:24,color:"#666",marginLeft:12}}>({pct}%)</span>
         </div>
-        <div style={{background:"#111",border:"2px solid #2a2a2a",height:16,borderRadius:2,overflow:"hidden",marginBottom:20}}>
+        <div style={{background:"#111",border:"2px solid #2a2a2a",height:16,borderRadius:2,overflow:"hidden",marginBottom:12}}>
           <div style={{width:`${pct}%`,height:"100%",background:lc,
             backgroundImage:`repeating-linear-gradient(90deg,${lc} 0,${lc} 10px,${lc}99 10px,${lc}99 16px)`}}/>
         </div>
-
-        {/* BOTÓN ENVIAR */}
-        {!enviado ? (
-          <div>
-            <button onClick={handleEnviar} style={{
-              background: C.green, color: C.black,
-              border:`3px solid ${C.greenDk}`, boxShadow:`0 5px 0 ${C.greenDk}`,
-              fontFamily:"'Press Start 2P'", fontSize:11, padding:"16px 32px",
-              cursor:"pointer", borderRadius:3, letterSpacing:2, marginBottom:8,
-              display:"block", width:"100%"
-            }}>
-              📤 ENVIAR RESULTADOS
-            </button>
-            <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555"}}>
-              Se abre una pestaña — si dice OK, llegó ✓
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            background:"#0a2a0a", border:`3px solid ${C.green}`,
-            borderRadius:4, padding:"14px", marginBottom:8,
-            fontFamily:"'Press Start 2P'", fontSize:9, color:C.green
-          }}>
-            ✓ RESULTADOS ENVIADOS
-          </div>
-        )}
+        <div style={{fontFamily:"'Press Start 2P'",fontSize:7,
+          color: sendStatus==="ok" ? C.green : sendStatus==="error" ? C.red : "#555"}}>
+          {sendStatus==="sending" && "⏳ guardando resultados..."}
+          {sendStatus==="ok"      && "✓ resultados guardados"}
+          {sendStatus==="error"   && "✗ error al guardar — avisá al docente"}
+        </div>
       </div>
 
       <div style={{fontFamily:"'Press Start 2P'",color:"#777",fontSize:8,marginBottom:14,letterSpacing:1}}>
