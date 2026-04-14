@@ -440,10 +440,10 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
   const score = answers.filter((a,i) => a.selected === questions[i].ok).length;
   const pct = Math.round((score/questions.length)*100);
   const [stars, label, lc] = pct>=80 ? [3,"¡EXCELENTE!",C.yellow] : pct>=60 ? [2,"APROBADO",C.green] : [1,"A REPASAR",C.red];
-  const [sendStatus, setSendStatus] = useState("sending"); // sending | ok | error
+  const [sendStatus, setSendStatus] = useState("sending");
 
   useEffect(() => {
-    // Guardar local
+    // 1. Guardar local para "Mis Intentos"
     try {
       const session = answers.map((a,i)=>({
         nombre: playerName, tema: questions[i].tema, nro: i+1,
@@ -455,22 +455,16 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
       localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
     } catch(e) {}
 
-    // Enviar a GAS silenciosamente
-    if (!GAS_URL) { setSendStatus("ok"); return; }
+    // 2. Enviar al sheet via Netlify Function
     const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-    const url = `${GAS_URL}?nombre=${encodeURIComponent(playerName)}&correctos=${correctos}&total=${score}`;
-
-    // Enviar a GAS via Netlify Function (servidor→GAS, sin CORS)
-    if (!GAS_URL) {
-      fetch("/.netlify/functions/save-score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: playerName, correctos, total: score })
-      })
-      .then(r => r.json())
-      .then(data => setSendStatus(data.ok ? "ok" : "error"))
-      .catch(() => setSendStatus("error"));
-    }
+    fetch("/.netlify/functions/save-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: playerName, correctos, total: score })
+    })
+    .then(r => r.json())
+    .then(data => setSendStatus(data.ok ? "ok" : "error"))
+    .catch(() => setSendStatus("error"));
   }, []);
 
   return (
