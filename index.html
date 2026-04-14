@@ -168,18 +168,27 @@ async function saveSession(session) {
     localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
   } catch(e) {}
 
-  // 2. Enviar a Google Sheets via Image pixel (nunca bloqueado por CORS)
+  // 2. Enviar a Google Sheets via iframe oculto
   if (GAS_URL && GAS_URL !== "") {
     try {
-      const params = new URLSearchParams({
-        nombre:    session[0].nombre,
-        preguntas: session.map(s => s.pregunta).join("||"),
-        correctos: session.map(s => s.correcto).join(","),
-        total:     session.filter(s => s.correcto === 1).length
-      });
-      const img = new Image();
-      img.src = GAS_URL + "?" + params.toString();
-    } catch(e) { console.warn("No se pudo enviar a Sheets:", e); }
+      const correctos = session.map(s => s.correcto).join(",");
+      const total     = session.filter(s => s.correcto === 1).length;
+      const nombre    = encodeURIComponent(session[0].nombre);
+      const url       = `${GAS_URL}?nombre=${nombre}&correctos=${correctos}&total=${total}`;
+
+      console.log("Enviando a GAS:", url); // para debug en DevTools
+
+      // Iframe oculto — más confiable que fetch o Image()
+      let iframe = document.getElementById("_gas_iframe");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "_gas_iframe";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+      }
+      iframe.src = url;
+
+    } catch(e) { console.warn("Error al enviar:", e); }
   }
 }
 
@@ -431,21 +440,35 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
   const score = answers.filter((a,i) => a.selected === questions[i].ok).length;
   const pct = Math.round((score/questions.length)*100);
   const [stars, label, lc] = pct>=80 ? [3,"¡EXCELENTE!",C.yellow] : pct>=60 ? [2,"APROBADO",C.green] : [1,"A REPASAR",C.red];
-  const [saved, setSaved] = useState(false);
+  const [enviado, setEnviado] = useState(false);
 
+  // Guardar local siempre (para "Mis Intentos")
   useEffect(() => {
-    if(saved) return;
-    setSaved(true);
-    const session = answers.map((a,i)=>({
-      nombre: playerName,
-      tema: questions[i].tema,
-      nro: i+1,
-      pregunta: questions[i].q,
-      respuesta: a.selected !== null ? questions[i].ops[a.selected] : "SIN RESPUESTA",
-      correcto: a.selected === questions[i].ok ? 1 : 0
-    }));
-    saveSession(session);
+    try {
+      const session = answers.map((a,i)=>({
+        nombre: playerName, tema: questions[i].tema, nro: i+1,
+        pregunta: questions[i].q,
+        respuesta: a.selected !== null ? questions[i].ops[a.selected] : "SIN RESPUESTA",
+        correcto: a.selected === questions[i].ok ? 1 : 0
+      }));
+      const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+      localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
+    } catch(e) {}
   }, []);
+
+  // Construir URL para enviar a GAS
+  const gasURL = (() => {
+    if (!GAS_URL) return null;
+    const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
+    const nombre    = encodeURIComponent(playerName);
+    return `${GAS_URL}?nombre=${nombre}&correctos=${correctos}&total=${score}`;
+  })();
+
+  const handleEnviar = () => {
+    if (!gasURL) return;
+    window.open(gasURL, "_blank");
+    setEnviado(true);
+  };
 
   return (
     <div>
@@ -465,7 +488,34 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
           <div style={{width:`${pct}%`,height:"100%",background:lc,
             backgroundImage:`repeating-linear-gradient(90deg,${lc} 0,${lc} 10px,${lc}99 10px,${lc}99 16px)`}}/>
         </div>
+
+        {/* BOTÓN ENVIAR */}
+        {!enviado ? (
+          <div>
+            <button onClick={handleEnviar} style={{
+              background: C.green, color: C.black,
+              border:`3px solid ${C.greenDk}`, boxShadow:`0 5px 0 ${C.greenDk}`,
+              fontFamily:"'Press Start 2P'", fontSize:11, padding:"16px 32px",
+              cursor:"pointer", borderRadius:3, letterSpacing:2, marginBottom:8,
+              display:"block", width:"100%"
+            }}>
+              📤 ENVIAR RESULTADOS
+            </button>
+            <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555"}}>
+              Se abre una pestaña — si dice OK, llegó ✓
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            background:"#0a2a0a", border:`3px solid ${C.green}`,
+            borderRadius:4, padding:"14px", marginBottom:8,
+            fontFamily:"'Press Start 2P'", fontSize:9, color:C.green
+          }}>
+            ✓ RESULTADOS ENVIADOS
+          </div>
+        )}
       </div>
+
       <div style={{fontFamily:"'Press Start 2P'",color:"#777",fontSize:8,marginBottom:14,letterSpacing:1}}>
         REVISIÓN DE RESPUESTAS
       </div>
