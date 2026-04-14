@@ -25,10 +25,10 @@
 
 <script type="text/babel">
 // ════════════════════════════════════════════════════════════════════
-//  El GAS_URL ya no va acá — está en las variables de entorno de Netlify
-//  El quiz llama a /.netlify/functions/save-score (mismo dominio, sin CORS)
-// ════════════════════════════════════════════════════════════════════
-const GAS_URL = null; // no se usa más directamente
+// ════════════════════════════════════════════════
+//  URL de Google Apps Script
+// ════════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec";
 
 const { useState, useEffect, useRef } = React;
 
@@ -161,36 +161,6 @@ function loadMyScores(playerName) {
   } catch { return []; }
 }
 
-async function saveSession(session) {
-  // 1. Guardar local (para "Mis Intentos")
-  try {
-    const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-    localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
-  } catch(e) {}
-
-  // 2. Enviar a Google Sheets via iframe oculto
-  if (GAS_URL && GAS_URL !== "") {
-    try {
-      const correctos = session.map(s => s.correcto).join(",");
-      const total     = session.filter(s => s.correcto === 1).length;
-      const nombre    = encodeURIComponent(session[0].nombre);
-      const url       = `${GAS_URL}?nombre=${nombre}&correctos=${correctos}&total=${total}`;
-
-      console.log("Enviando a GAS:", url); // para debug en DevTools
-
-      // Iframe oculto — más confiable que fetch o Image()
-      let iframe = document.getElementById("_gas_iframe");
-      if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.id = "_gas_iframe";
-        iframe.style.display = "none";
-        document.body.appendChild(iframe);
-      }
-      iframe.src = url;
-
-    } catch(e) { console.warn("Error al enviar:", e); }
-  }
-}
 
 // ─── UI KIT ───────────────────────────────────────────────────────────────────
 function Btn({ children, color=C.red, onClick, style={}, disabled=false }) {
@@ -455,16 +425,17 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
       localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
     } catch(e) {}
 
-    // 2. Enviar al sheet via Netlify Function
+    // 2. Enviar al sheet via form oculto (nunca bloqueado por CORS)
     const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-    fetch("/.netlify/functions/save-score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: playerName, correctos, total: score })
-    })
-    .then(r => r.json())
-    .then(data => setSendStatus(data.ok ? "ok" : "error"))
-    .catch(() => setSendStatus("error"));
+    try {
+      document.getElementById("_f_nombre").value   = playerName;
+      document.getElementById("_f_correctos").value = correctos;
+      document.getElementById("_f_total").value    = String(score);
+      document.getElementById("_gas_form").submit();
+      setSendStatus("ok");
+    } catch(e) {
+      setSendStatus("error");
+    }
   }, []);
 
   return (
@@ -632,5 +603,14 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
+
+<!-- Formulario oculto para enviar datos a GAS sin bloqueos de CORS -->
+<iframe name="_gas_frame" id="_gas_frame" style="display:none"></iframe>
+<form id="_gas_form" method="GET" action="https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec" target="_gas_frame" style="display:none">
+  <input type="hidden" id="_f_nombre"    name="nombre"/>
+  <input type="hidden" id="_f_correctos" name="correctos"/>
+  <input type="hidden" id="_f_total"     name="total"/>
+</form>
+
 </body>
 </html>
