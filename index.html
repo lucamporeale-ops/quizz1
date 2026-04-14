@@ -25,10 +25,10 @@
 
 <script type="text/babel">
 // ════════════════════════════════════════════════════════════════════
-//  ⚙️  CONFIGURACIÓN — PEGÁ TU URL DE GOOGLE APPS SCRIPT AQUÍ ABAJO
+//  El GAS_URL ya no va acá — está en las variables de entorno de Netlify
+//  El quiz llama a /.netlify/functions/save-score (mismo dominio, sin CORS)
 // ════════════════════════════════════════════════════════════════════
-const GAS_URL = "https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec";
-// ════════════════════════════════════════════════════════════════════
+const GAS_URL = null; // no se usa más directamente
 
 const { useState, useEffect, useRef } = React;
 
@@ -460,18 +460,17 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
     const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
     const url = `${GAS_URL}?nombre=${encodeURIComponent(playerName)}&correctos=${correctos}&total=${score}`;
 
-    fetch(url, { mode: "no-cors" })
-      .then(() => setSendStatus("ok"))
-      .catch(() => {
-        // fetch falló — intentar con XMLHttpRequest
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open("GET", url, true);
-          xhr.onload = () => setSendStatus("ok");
-          xhr.onerror = () => setSendStatus("error");
-          xhr.send();
-        } catch(e) { setSendStatus("error"); }
-      });
+    // Enviar a GAS via Netlify Function (servidor→GAS, sin CORS)
+    if (!GAS_URL) {
+      fetch("/.netlify/functions/save-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: playerName, correctos, total: score })
+      })
+      .then(r => r.json())
+      .then(data => setSendStatus(data.ok ? "ok" : "error"))
+      .catch(() => setSendStatus("error"));
+    }
   }, []);
 
   return (
