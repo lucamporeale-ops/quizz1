@@ -7,30 +7,28 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #1B1B2F; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #0a0a0a; }
-    ::-webkit-scrollbar-thumb { background: #C84C0C; border-radius: 3px; }
-    input::placeholder { color: #444; }
-    button:active { transform: translateY(1px) !important; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#1B1B2F;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-track{background:#0a0a0a;}
+    ::-webkit-scrollbar-thumb{background:#C84C0C;border-radius:3px;}
+    input::placeholder{color:#444;}
+    button:active{transform:translateY(1px)!important;}
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
 
 <script type="text/babel">
-// ════════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════
-//  URL de Google Apps Script
-// ════════════════════════════════════════════════
-const GAS_URL = "https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec";
-
 const { useState, useEffect, useRef } = React;
+
+const GAS_URL = "https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec";
+const LS_KEY  = "gd_mis_intentos";
+const TOTAL   = 20;
+const TLIMIT  = 40;
 
 const C = {
   red:"#E52521", redDk:"#9C1A18", blue:"#049CD8", blueDk:"#026B96",
@@ -40,572 +38,376 @@ const C = {
   ground:"#C87137", coin:"#FFA500", block:"#D4821A",
 };
 
-// ─── SVG ART ─────────────────────────────────────────────────────────────────
-function MarioSprite({ size = 72 }) {
-  const px = size / 14;
-  const rows = [
-    "____RRRRR_____","___RRRRRRRRR__","___BBBSSBBS___",
-    "__BSBSSSSSS___","__BSBBSSSSSS__","__BBBSSSSSS___",
-    "____RRRBBR____","___RRROORRR___","__RRRROORRRR__",
-    "__RRRROOORRR__","__SRRROOORSS__","___SSSOOOS____",
-    "____BBBBBBB___","___BB_____BB__",
-  ];
-  const cm = { R:C.red, S:C.skin, B:C.brown, O:C.blue };
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${14*px} ${14*px}`} style={{imageRendering:"pixelated",display:"block"}}>
-      {rows.map((row,y)=>row.split("").map((ch,x)=>
-        cm[ch] ? <rect key={`${x}-${y}`} x={x*px} y={y*px} width={px} height={px} fill={cm[ch]}/> : null
-      ))}
-    </svg>
-  );
+// ─── SVG ─────────────────────────────────────────────────────────────────────
+function MarioSprite({ size=72 }) {
+  const p = size/14;
+  const rows = ["____RRRRR_____","___RRRRRRRRR__","___BBBSSBBS___","__BSBSSSSSS___","__BSBBSSSSSS__","__BBBSSSSSS___","____RRRBBR____","___RRROORRR___","__RRRROORRRR__","__RRRROOORRR__","__SRRROOORSS__","___SSSOOOS____","____BBBBBBB___","___BB_____BB__"];
+  const cm = {R:C.red,S:C.skin,B:C.brown,O:C.blue};
+  return <svg width={size} height={size} viewBox={`0 0 ${14*p} ${14*p}`} style={{imageRendering:"pixelated",display:"block"}}>
+    {rows.map((r,y)=>r.split("").map((ch,x)=>cm[ch]?<rect key={`${x}-${y}`} x={x*p} y={y*p} width={p} height={p} fill={cm[ch]}/>:null))}
+  </svg>;
 }
 function QBlock({ size=36 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 36 36">
-      <rect width="36" height="36" fill={C.block}/>
-      <rect x="2" y="2" width="32" height="3" fill="#F0A830"/>
-      <rect x="2" y="2" width="3" height="32" fill="#F0A830"/>
-      <rect x="2" y="31" width="32" height="3" fill={C.brown}/>
-      <rect x="31" y="2" width="3" height="32" fill={C.brown}/>
-      <text x="18" y="27" textAnchor="middle" fontSize="17" fontWeight="900" fill={C.white} fontFamily="serif">?</text>
-    </svg>
-  );
+  return <svg width={size} height={size} viewBox="0 0 36 36">
+    <rect width="36" height="36" fill={C.block}/><rect x="2" y="2" width="32" height="3" fill="#F0A830"/><rect x="2" y="2" width="3" height="32" fill="#F0A830"/><rect x="2" y="31" width="32" height="3" fill={C.brown}/><rect x="31" y="2" width="3" height="32" fill={C.brown}/>
+    <text x="18" y="27" textAnchor="middle" fontSize="17" fontWeight="900" fill={C.white} fontFamily="serif">?</text>
+  </svg>;
 }
 function Coin({ size=20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 22 22">
-      <ellipse cx="11" cy="11" rx="9" ry="9" fill={C.yellow}/>
-      <ellipse cx="11" cy="11" rx="6" ry="7" fill={C.coin}/>
-      <ellipse cx="9" cy="9" rx="2" ry="2" fill="#FFE066" opacity="0.7"/>
-    </svg>
-  );
+  return <svg width={size} height={size} viewBox="0 0 22 22"><ellipse cx="11" cy="11" rx="9" ry="9" fill={C.yellow}/><ellipse cx="11" cy="11" rx="6" ry="7" fill={C.coin}/><ellipse cx="9" cy="9" rx="2" ry="2" fill="#FFE066" opacity="0.7"/></svg>;
 }
 function Star({ size=26, lit=true }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 28 28">
-      <polygon points="14,2 17,10 26,10 19,15 22,24 14,19 6,24 9,15 2,10 11,10"
-        fill={lit?C.yellow:"#2a2a2a"} stroke={lit?C.yellowDk:"#1a1a1a"} strokeWidth="1"/>
-      {lit && <circle cx="10" cy="11" r="2" fill={C.white} opacity="0.6"/>}
-    </svg>
-  );
+  return <svg width={size} height={size} viewBox="0 0 28 28">
+    <polygon points="14,2 17,10 26,10 19,15 22,24 14,19 6,24 9,15 2,10 11,10" fill={lit?C.yellow:"#2a2a2a"} stroke={lit?C.yellowDk:"#1a1a1a"} strokeWidth="1"/>
+    {lit&&<circle cx="10" cy="11" r="2" fill={C.white} opacity="0.6"/>}
+  </svg>;
 }
 function Mushroom({ size=32 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32">
-      <ellipse cx="16" cy="14" rx="13" ry="11" fill={C.red}/>
-      <ellipse cx="9" cy="11" rx="4" ry="3.5" fill={C.white}/>
-      <ellipse cx="23" cy="10" rx="4" ry="3.5" fill={C.white}/>
-      <rect x="10" y="21" width="12" height="9" rx="3" fill={C.skin}/>
-      <ellipse cx="12" cy="21" rx="3" ry="3.5" fill={C.skin}/>
-      <ellipse cx="20" cy="21" rx="3" ry="3.5" fill={C.skin}/>
-    </svg>
-  );
+  return <svg width={size} height={size} viewBox="0 0 32 32">
+    <ellipse cx="16" cy="14" rx="13" ry="11" fill={C.red}/><ellipse cx="9" cy="11" rx="4" ry="3.5" fill={C.white}/><ellipse cx="23" cy="10" rx="4" ry="3.5" fill={C.white}/><rect x="10" y="21" width="12" height="9" rx="3" fill={C.skin}/><ellipse cx="12" cy="21" rx="3" ry="3.5" fill={C.skin}/><ellipse cx="20" cy="21" rx="3" ry="3.5" fill={C.skin}/>
+  </svg>;
 }
 
 // ─── PREGUNTAS ────────────────────────────────────────────────────────────────
-const ALL_QUESTIONS = [
-  {q:"¿Quién acuñó el concepto 'Homo Ludens'?", ops:["Roger Caillois","Johan Huizinga","Bernard Suits","Zimmerman"], ok:1, tema:"Origen de los Juegos"},
-  {q:"El juego de Senet proviene de:", ops:["Mesopotamia","China","Egipto","Grecia"], ok:2, tema:"Origen de los Juegos"},
-  {q:"Según Huizinga, el juego es __ respecto a la cultura:", ops:["Posterior","Simultáneo","Anterior","Independiente"], ok:2, tema:"Origen de los Juegos"},
-  {q:"El 'Círculo Mágico' es:", ops:["Una mecánica de juego","El espacio separado donde ocurre el juego","Un tipo de juego ritual","La narrativa del juego"], ok:1, tema:"Origen de los Juegos"},
-  {q:"¿Cuántas características define Caillois para el juego?", ops:["4","5","6","7"], ok:2, tema:"¿Qué es el Juego?"},
-  {q:"El 'Lusory Attitude' fue propuesto por:", ops:["Huizinga","Caillois","Bernard Suits","Zimmerman"], ok:2, tema:"¿Qué es el Juego?"},
-  {q:"¿Cuál NO es una característica del juego según Caillois?", ops:["Libre","Productivo","Incierto","Ficticio"], ok:1, tema:"¿Qué es el Juego?"},
-  {q:"Salen & Zimmerman definen el juego como:", ops:["Una actividad ritual","Sistema con conflicto artificial y reglas","Una forma de arte","Actividad educativa"], ok:1, tema:"¿Qué es el Juego?"},
-  {q:"Un juego de ruleta pertenece a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:1, tema:"Tipos y Clasificación"},
-  {q:"Los juegos de rol (RPG) pertenecen principalmente a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:2, tema:"Tipos y Clasificación"},
-  {q:"PAIDIA vs LUDUS refiere a:", ops:["Individual vs grupal","Libre vs reglamentado","Digital vs analógico","Rápido vs lento"], ok:1, tema:"Tipos y Clasificación"},
-  {q:"Un juego de VR con vértigo extremo es ejemplo de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:3, tema:"Tipos y Clasificación"},
-  {q:"El ajedrez es ejemplo puro de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:0, tema:"Tipos y Clasificación"},
-  {q:"El HUD es:", ops:["Un tipo de control","Información persistente en pantalla","Un motor gráfico","Un tipo de mecánica"], ok:1, tema:"Componentes del Videojuego"},
-  {q:"El 'Game Loop' consiste en:", ops:["Historia principal del juego","Input → Actualización → Renderizado","Menú principal","Sistema de guardado"], ok:1, tema:"Componentes del Videojuego"},
-  {q:"¿Cuál NO es un componente básico de un videojuego?", ops:["Mecánicas","Narrativa","Presupuesto de producción","Audio"], ok:2, tema:"Componentes del Videojuego"},
-  {q:"La diferencia entre UI y UX en videojuegos:", ops:["No hay diferencia","UI = elementos visuales; UX = experiencia completa","UX = gráficos; UI = sonido","UI = código; UX = arte"], ok:1, tema:"Componentes del Videojuego"},
-  {q:"La mecánica central de Super Mario Odyssey es:", ops:["Disparar proyectiles","Capturar enemigos con Cappy","Construir bases","Gestionar recursos"], ok:1, tema:"Mario Odyssey & Uncharted 4"},
-  {q:"Uncharted 4 pertenece al género:", ops:["Plataformas","Acción-aventura en 3ra persona","RPG","FPS"], ok:1, tema:"Mario Odyssey & Uncharted 4"},
-  {q:"En Caillois, Mario Odyssey combina principalmente:", ops:["ALEA + ILINX","ILINX + MIMICRY","AGON + MIMICRY","Solo AGON"], ok:2, tema:"Mario Odyssey & Uncharted 4"},
-  {q:"El Core Loop es:", ops:["La historia principal","El ciclo fundamental de acciones repetibles","El menú principal","El sistema de guardado"], ok:1, tema:"El Núcleo del Juego"},
-  {q:"Un feedback loop POSITIVO en juegos:", ops:["Equilibra el juego","Amplifica ventajas (efecto bola de nieve)","Siempre reduce la dificultad","Beneficia al jugador perdedor"], ok:1, tema:"El Núcleo del Juego"},
-  {q:"El 'Game Feel' o 'Juice' refiere a:", ops:["La narrativa del juego","El feedback sensorial inmediato de las acciones","El presupuesto de producción","La duración del juego"], ok:1, tema:"El Núcleo del Juego"},
-  {q:"El 'Onboarding' es:", ops:["El menú inicial","El proceso de enseñanza del juego al jugador","Los créditos finales","El sistema de puntuación"], ok:1, tema:"El Núcleo del Juego"},
-  {q:"En MDA, las Mecánicas son:", ops:["Lo que siente el jugador","Comportamientos emergentes","Las reglas y acciones disponibles","La narrativa del juego"], ok:2, tema:"Mecánicas de Juego"},
-  {q:"Los 'verbos del juego' hacen referencia a:", ops:["El diálogo de los personajes","Las mecánicas (acciones disponibles)","Los géneros del juego","Los objetivos narrativos"], ok:1, tema:"Mecánicas de Juego"},
-  {q:"El 'Possibility Space' es:", ops:["El mapa del juego","Todos los estados y acciones posibles bajo las reglas","El menú de opciones","La historia del juego"], ok:1, tema:"Mecánicas de Juego"},
-  {q:"La 'Emergencia' en mecánicas ocurre cuando:", ops:["Hay bugs en el juego","Mecánicas simples crean comportamientos complejos","El jugador hace trampa","El diseñador agrega DLC"], ok:1, tema:"Mecánicas de Juego"},
-  {q:"Las mecánicas las controla directamente:", ops:["El jugador","El productor ejecutivo","El diseñador de juegos","El motor gráfico"], ok:2, tema:"Mecánicas de Juego"},
-  {q:"Las Dinámicas en MDA son:", ops:["Las reglas del juego","El comportamiento emergente del sistema en runtime","La respuesta emocional del jugador","Los gráficos del juego"], ok:1, tema:"Dinámica"},
-  {q:"¿Quién controla directamente las Dinámicas?", ops:["El diseñador","El programador","Emergen de la interacción — nadie las controla directamente","El productor"], ok:2, tema:"Dinámica"},
-  {q:"El 'Metagame' es:", ops:["El tutorial del juego","Estrategias emergentes de la comunidad de jugadores","El modo historia","Los DLCs del juego"], ok:1, tema:"Dinámica"},
-  {q:"La diferencia clave entre Mecánica y Dinámica:", ops:["Solo difieren en costo de desarrollo","La mecánica se diseña; la dinámica emerge","La dinámica siempre es más importante","Solo aplica en juegos online"], ok:1, tema:"Dinámica"},
-  {q:"El 'griefing' es un ejemplo de:", ops:["Una mecánica de diseño","Una estética del MDA","Una dinámica emergente","Un componente básico del videojuego"], ok:2, tema:"Dinámica"},
-  {q:"En MDA, la Estética es:", ops:["El arte visual del juego","La respuesta emocional del jugador","Las reglas del juego","Los comportamientos emergentes"], ok:1, tema:"Estética (MDA)"},
-  {q:"¿Cuántas estéticas define el MDA Framework?", ops:["4","6","8","10"], ok:2, tema:"Estética (MDA)"},
-  {q:"La estética 'Fellowship' refiere a:", ops:["El placer visual y sensorial","El desafío del juego","La conexión social con otros jugadores","La narrativa del juego"], ok:2, tema:"Estética (MDA)"},
-  {q:"El orden causal correcto en MDA es:", ops:["Estética→Dinámica→Mecánica","Dinámica→Mecánica→Estética","Mecánica→Dinámica→Estética","No existe un orden"], ok:2, tema:"Estética (MDA)"},
-  {q:"Dark Souls es conocido principalmente por la estética:", ops:["Submission","Fellowship","Challenge","Fantasy"], ok:2, tema:"Estética (MDA)"},
-  {q:"Animal Crossing destaca las estéticas:", ops:["Challenge y Fantasy","Submission y Expression","Narrative pura","AGON y ILINX"], ok:1, tema:"Estética (MDA)"},
+const ALL_Q = [
+  {q:"¿Quién acuñó el concepto 'Homo Ludens'?", ops:["Roger Caillois","Johan Huizinga","Bernard Suits","Zimmerman"], ok:1, t:"Origen de los Juegos"},
+  {q:"El juego de Senet proviene de:", ops:["Mesopotamia","China","Egipto","Grecia"], ok:2, t:"Origen de los Juegos"},
+  {q:"Según Huizinga, el juego es __ respecto a la cultura:", ops:["Posterior","Simultáneo","Anterior","Independiente"], ok:2, t:"Origen de los Juegos"},
+  {q:"El 'Círculo Mágico' es:", ops:["Una mecánica de juego","El espacio separado donde ocurre el juego","Un tipo de juego ritual","La narrativa del juego"], ok:1, t:"Origen de los Juegos"},
+  {q:"¿Cuántas características define Caillois para el juego?", ops:["4","5","6","7"], ok:2, t:"¿Qué es el Juego?"},
+  {q:"El 'Lusory Attitude' fue propuesto por:", ops:["Huizinga","Caillois","Bernard Suits","Zimmerman"], ok:2, t:"¿Qué es el Juego?"},
+  {q:"¿Cuál NO es una característica del juego según Caillois?", ops:["Libre","Productivo","Incierto","Ficticio"], ok:1, t:"¿Qué es el Juego?"},
+  {q:"Salen & Zimmerman definen el juego como:", ops:["Una actividad ritual","Sistema con conflicto artificial y reglas","Una forma de arte","Actividad educativa"], ok:1, t:"¿Qué es el Juego?"},
+  {q:"Un juego de ruleta pertenece a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:1, t:"Tipos y Clasificación"},
+  {q:"Los juegos de rol (RPG) pertenecen principalmente a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:2, t:"Tipos y Clasificación"},
+  {q:"PAIDIA vs LUDUS refiere a:", ops:["Individual vs grupal","Libre vs reglamentado","Digital vs analógico","Rápido vs lento"], ok:1, t:"Tipos y Clasificación"},
+  {q:"Un juego de VR con vértigo extremo es ejemplo de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:3, t:"Tipos y Clasificación"},
+  {q:"El ajedrez es ejemplo puro de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:0, t:"Tipos y Clasificación"},
+  {q:"El HUD es:", ops:["Un tipo de control","Información persistente en pantalla","Un motor gráfico","Un tipo de mecánica"], ok:1, t:"Componentes del Videojuego"},
+  {q:"El 'Game Loop' consiste en:", ops:["Historia principal del juego","Input → Actualización → Renderizado","Menú principal","Sistema de guardado"], ok:1, t:"Componentes del Videojuego"},
+  {q:"¿Cuál NO es un componente básico de un videojuego?", ops:["Mecánicas","Narrativa","Presupuesto de producción","Audio"], ok:2, t:"Componentes del Videojuego"},
+  {q:"La diferencia entre UI y UX en videojuegos:", ops:["No hay diferencia","UI = elementos visuales; UX = experiencia completa","UX = gráficos; UI = sonido","UI = código; UX = arte"], ok:1, t:"Componentes del Videojuego"},
+  {q:"La mecánica central de Super Mario Odyssey es:", ops:["Disparar proyectiles","Capturar enemigos con Cappy","Construir bases","Gestionar recursos"], ok:1, t:"Mario Odyssey & Uncharted 4"},
+  {q:"Uncharted 4 pertenece al género:", ops:["Plataformas","Acción-aventura en 3ra persona","RPG","FPS"], ok:1, t:"Mario Odyssey & Uncharted 4"},
+  {q:"En Caillois, Mario Odyssey combina principalmente:", ops:["ALEA + ILINX","ILINX + MIMICRY","AGON + MIMICRY","Solo AGON"], ok:2, t:"Mario Odyssey & Uncharted 4"},
+  {q:"El Core Loop es:", ops:["La historia principal","El ciclo fundamental de acciones repetibles","El menú principal","El sistema de guardado"], ok:1, t:"El Núcleo del Juego"},
+  {q:"Un feedback loop POSITIVO en juegos:", ops:["Equilibra el juego","Amplifica ventajas (efecto bola de nieve)","Siempre reduce la dificultad","Beneficia al jugador perdedor"], ok:1, t:"El Núcleo del Juego"},
+  {q:"El 'Game Feel' o 'Juice' refiere a:", ops:["La narrativa del juego","El feedback sensorial inmediato de las acciones","El presupuesto de producción","La duración del juego"], ok:1, t:"El Núcleo del Juego"},
+  {q:"El 'Onboarding' es:", ops:["El menú inicial","El proceso de enseñanza del juego al jugador","Los créditos finales","El sistema de puntuación"], ok:1, t:"El Núcleo del Juego"},
+  {q:"En MDA, las Mecánicas son:", ops:["Lo que siente el jugador","Comportamientos emergentes","Las reglas y acciones disponibles","La narrativa del juego"], ok:2, t:"Mecánicas de Juego"},
+  {q:"Los 'verbos del juego' hacen referencia a:", ops:["El diálogo de los personajes","Las mecánicas (acciones disponibles)","Los géneros del juego","Los objetivos narrativos"], ok:1, t:"Mecánicas de Juego"},
+  {q:"El 'Possibility Space' es:", ops:["El mapa del juego","Todos los estados y acciones posibles bajo las reglas","El menú de opciones","La historia del juego"], ok:1, t:"Mecánicas de Juego"},
+  {q:"La 'Emergencia' en mecánicas ocurre cuando:", ops:["Hay bugs en el juego","Mecánicas simples crean comportamientos complejos","El jugador hace trampa","El diseñador agrega DLC"], ok:1, t:"Mecánicas de Juego"},
+  {q:"Las mecánicas las controla directamente:", ops:["El jugador","El productor ejecutivo","El diseñador de juegos","El motor gráfico"], ok:2, t:"Mecánicas de Juego"},
+  {q:"Las Dinámicas en MDA son:", ops:["Las reglas del juego","El comportamiento emergente del sistema en runtime","La respuesta emocional del jugador","Los gráficos del juego"], ok:1, t:"Dinámica"},
+  {q:"¿Quién controla directamente las Dinámicas?", ops:["El diseñador","El programador","Emergen de la interacción — nadie las controla directamente","El productor"], ok:2, t:"Dinámica"},
+  {q:"El 'Metagame' es:", ops:["El tutorial del juego","Estrategias emergentes de la comunidad de jugadores","El modo historia","Los DLCs del juego"], ok:1, t:"Dinámica"},
+  {q:"La diferencia clave entre Mecánica y Dinámica:", ops:["Solo difieren en costo de desarrollo","La mecánica se diseña; la dinámica emerge","La dinámica siempre es más importante","Solo aplica en juegos online"], ok:1, t:"Dinámica"},
+  {q:"El 'griefing' es un ejemplo de:", ops:["Una mecánica de diseño","Una estética del MDA","Una dinámica emergente","Un componente básico del videojuego"], ok:2, t:"Dinámica"},
+  {q:"En MDA, la Estética es:", ops:["El arte visual del juego","La respuesta emocional del jugador","Las reglas del juego","Los comportamientos emergentes"], ok:1, t:"Estética (MDA)"},
+  {q:"¿Cuántas estéticas define el MDA Framework?", ops:["4","6","8","10"], ok:2, t:"Estética (MDA)"},
+  {q:"La estética 'Fellowship' refiere a:", ops:["El placer visual y sensorial","El desafío del juego","La conexión social con otros jugadores","La narrativa del juego"], ok:2, t:"Estética (MDA)"},
+  {q:"El orden causal correcto en MDA es:", ops:["Estética→Dinámica→Mecánica","Dinámica→Mecánica→Estética","Mecánica→Dinámica→Estética","No existe un orden"], ok:2, t:"Estética (MDA)"},
+  {q:"Dark Souls es conocido principalmente por la estética:", ops:["Submission","Fellowship","Challenge","Fantasy"], ok:2, t:"Estética (MDA)"},
+  {q:"Animal Crossing destaca las estéticas:", ops:["Challenge y Fantasy","Submission y Expression","Narrative pura","AGON y ILINX"], ok:1, t:"Estética (MDA)"},
 ];
 
-const TOTAL = 20;
-const TLIMIT = 40;
-const LS_KEY = "gd_mis_intentos";
-
 function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
-function pickQuestions() { return shuffle(ALL_QUESTIONS).slice(0, TOTAL); }
+function pickQ() { return shuffle(ALL_Q).slice(0,TOTAL); }
 
-// ─── STORAGE: localStorage + Google Sheets ───────────────────────────────────
-function loadMyScores(playerName) {
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-    return all.filter(s => s.nombre === playerName);
-  } catch { return []; }
-}
-
-
-// ─── UI KIT ───────────────────────────────────────────────────────────────────
-function Btn({ children, color=C.red, onClick, style={}, disabled=false }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button onClick={onClick} disabled={disabled}
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{
-        background: disabled ? "#222" : hov ? color : "#0a0a16",
-        color: disabled ? "#555" : hov ? C.black : color,
-        border:`3px solid ${disabled?"#333":color}`,
-        boxShadow: disabled ? "none" : hov ? `0 4px 0 ${C.black},0 0 18px ${color}88` : `0 4px 0 ${C.black}`,
-        fontFamily:"'Press Start 2P',monospace", fontSize:9,
-        padding:"11px 20px", cursor: disabled ? "default" : "pointer",
-        borderRadius:3, letterSpacing:1, lineHeight:1.6,
-        transition:"all 0.1s", transform: hov&&!disabled ? "translateY(-2px)" : "translateY(0)",
-        ...style
-      }}>{children}</button>
-  );
+// ─── UI ───────────────────────────────────────────────────────────────────────
+function Btn({ children, color=C.red, onClick, style={} }) {
+  const [h,setH] = useState(false);
+  return <button onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{
+    background:h?color:"#0a0a16", color:h?C.black:color, border:`3px solid ${color}`,
+    boxShadow:h?`0 4px 0 ${C.black},0 0 18px ${color}88`:`0 4px 0 ${C.black}`,
+    fontFamily:"'Press Start 2P',monospace", fontSize:9, padding:"11px 20px",
+    cursor:"pointer", borderRadius:3, letterSpacing:1, lineHeight:1.6,
+    transition:"all 0.1s", transform:h?"translateY(-2px)":"translateY(0)", ...style
+  }}>{children}</button>;
 }
 function Card({ children, color=C.blue, style={} }) {
-  return (
-    <div style={{
-      background:"#0a0a18", border:`3px solid ${color}`,
-      boxShadow:`4px 4px 0 ${C.black},0 0 14px ${color}33`,
-      borderRadius:4, padding:"18px", ...style
-    }}>{children}</div>
-  );
+  return <div style={{background:"#0a0a18",border:`3px solid ${color}`,boxShadow:`4px 4px 0 ${C.black},0 0 14px ${color}33`,borderRadius:4,padding:"18px",...style}}>{children}</div>;
 }
 function Ground() {
-  return (
-    <div style={{
-      height:22, background:C.ground, margin:"0 -20px",
-      borderTop:`5px solid ${C.brick}`,
-      backgroundImage:`repeating-linear-gradient(90deg,${C.ground} 0,${C.ground} 34px,${C.brick} 34px,${C.brick} 38px)`
-    }}/>
-  );
+  return <div style={{height:22,background:C.ground,margin:"0 -20px",borderTop:`5px solid ${C.brick}`,backgroundImage:`repeating-linear-gradient(90deg,${C.ground} 0,${C.ground} 34px,${C.brick} 34px,${C.brick} 38px)`}}/>;
 }
-
-// ─── TIMER BAR ────────────────────────────────────────────────────────────────
 function TimerBar({ secs }) {
-  const pct = (secs/TLIMIT)*100;
-  const col = pct>50 ? C.green : pct>25 ? C.yellow : C.red;
-  return (
-    <div>
-      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-        <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:col}}>⏱</span>
-        <span style={{fontFamily:"'Press Start 2P'",fontSize:12,color:col,
-          animation:secs<=10?"blink 0.5s step-end infinite":"none"}}>{secs}s</span>
-      </div>
-      <div style={{background:"#111",border:"2px solid #2a2a2a",height:14,borderRadius:2,overflow:"hidden"}}>
-        <div style={{width:`${pct}%`,height:"100%",background:col,
-          boxShadow:`0 0 8px ${col}`,transition:"width 1s linear,background 0.5s",
-          backgroundImage:`repeating-linear-gradient(90deg,${col} 0,${col} 10px,${col}99 10px,${col}99 16px)`}}/>
-      </div>
+  const pct=(secs/TLIMIT)*100, col=pct>50?C.green:pct>25?C.yellow:C.red;
+  return <div>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+      <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:col}}>⏱</span>
+      <span style={{fontFamily:"'Press Start 2P'",fontSize:12,color:col,animation:secs<=10?"blink 0.5s step-end infinite":"none"}}>{secs}s</span>
     </div>
-  );
+    <div style={{background:"#111",border:"2px solid #2a2a2a",height:14,borderRadius:2,overflow:"hidden"}}>
+      <div style={{width:`${pct}%`,height:"100%",background:col,boxShadow:`0 0 8px ${col}`,transition:"width 1s linear,background 0.5s",backgroundImage:`repeating-linear-gradient(90deg,${col} 0,${col} 10px,${col}99 10px,${col}99 16px)`}}/>
+    </div>
+  </div>;
 }
 
 // ─── PANTALLA: NOMBRE ─────────────────────────────────────────────────────────
 function NameScreen({ onDone }) {
-  const [name, setName] = useState("");
-  const [err, setErr] = useState("");
-  const [blink, setBlink] = useState(true);
+  const [name,setName]=useState(""), [err,setErr]=useState(""), [blink,setBlink]=useState(true);
   useEffect(()=>{ const iv=setInterval(()=>setBlink(b=>!b),520); return()=>clearInterval(iv); },[]);
-  const go = () => { if(!name.trim()){setErr("¡Ingresá tu nombre!");return;} onDone(name.trim()); };
-  return (
-    <div style={{textAlign:"center",paddingTop:8}}>
-      <div style={{display:"flex",justifyContent:"space-around",marginBottom:6,opacity:0.45}}>
-        {["☁️","☁️","☁️","☁️"].map((c,i)=><span key={i} style={{fontSize:24}}>{c}</span>)}
-      </div>
-      <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.white,letterSpacing:3,marginBottom:10}}>
-        DISEÑO DE JUEGOS
-      </div>
-      <div style={{textShadow:`3px 3px 0 ${C.black}`,marginBottom:4}}>
-        <span style={{fontFamily:"'Press Start 2P'",fontSize:22,color:C.red}}>REPASO</span>
-      </div>
-      <div style={{textShadow:`3px 3px 0 ${C.black}`,marginBottom:16}}>
-        <span style={{fontFamily:"'Press Start 2P'",fontSize:14,color:C.yellow}}>PARCIAL 2025</span>
-      </div>
-      <div style={{display:"flex",justifyContent:"center",alignItems:"flex-end",gap:14,marginBottom:0}}>
-        <QBlock size={38}/><MarioSprite size={82}/>
-        <div style={{display:"flex",flexDirection:"column",gap:3,paddingBottom:4}}>
-          <Coin size={22}/><Coin size={22}/><Coin size={22}/>
-        </div>
-        <Mushroom size={34}/>
-      </div>
-      <Ground/>
-      <div style={{height:24}}/>
-      <Card color={C.yellow} style={{maxWidth:360,margin:"0 auto",padding:"26px 22px"}}>
-        <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:9,marginBottom:18}}>
-          👤 INGRESÁ TU NOMBRE
-        </div>
-        <input value={name} onChange={e=>{setName(e.target.value);setErr("");}}
-          onKeyDown={e=>e.key==="Enter"&&go()} maxLength={24} placeholder="Tu nombre..."
-          style={{width:"100%",background:"#000",color:C.white,border:`3px solid ${C.yellow}`,
-            borderRadius:3,fontFamily:"'Press Start 2P'",fontSize:10,padding:"12px 14px",
-            outline:"none",letterSpacing:1,boxSizing:"border-box",marginBottom:8}}/>
-        {err && <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:C.red,marginBottom:10}}>{err}</div>}
-        <button onClick={go} style={{
-          width:"100%",background:C.red,color:C.white,
-          border:`3px solid ${C.redDk}`,boxShadow:`0 5px 0 ${C.redDk}`,
-          fontFamily:"'Press Start 2P'",fontSize:11,padding:"14px",cursor:"pointer",
-          borderRadius:3,letterSpacing:2,marginTop:10,
-          opacity:blink?1:0.8,transition:"opacity 0.1s"
-        }}>▶ CONTINUAR ◀</button>
-      </Card>
+  const go=()=>{ if(!name.trim()){setErr("¡Ingresá tu nombre!");return;} onDone(name.trim()); };
+  return <div style={{textAlign:"center",paddingTop:8}}>
+    <div style={{display:"flex",justifyContent:"space-around",marginBottom:6,opacity:0.45}}>
+      {["☁️","☁️","☁️","☁️"].map((c,i)=><span key={i} style={{fontSize:24}}>{c}</span>)}
     </div>
-  );
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.white,letterSpacing:3,marginBottom:10}}>DISEÑO DE JUEGOS</div>
+    <div style={{textShadow:`3px 3px 0 ${C.black}`,marginBottom:4}}><span style={{fontFamily:"'Press Start 2P'",fontSize:22,color:C.red}}>REPASO</span></div>
+    <div style={{textShadow:`3px 3px 0 ${C.black}`,marginBottom:16}}><span style={{fontFamily:"'Press Start 2P'",fontSize:14,color:C.yellow}}>PARCIAL 2025</span></div>
+    <div style={{display:"flex",justifyContent:"center",alignItems:"flex-end",gap:14,marginBottom:0}}>
+      <QBlock size={38}/><MarioSprite size={82}/>
+      <div style={{display:"flex",flexDirection:"column",gap:3,paddingBottom:4}}>
+        <Coin size={22}/><Coin size={22}/><Coin size={22}/>
+      </div>
+      <Mushroom size={34}/>
+    </div>
+    <Ground/>
+    <div style={{height:24}}/>
+    <Card color={C.yellow} style={{maxWidth:360,margin:"0 auto",padding:"26px 22px"}}>
+      <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:9,marginBottom:18}}>👤 INGRESÁ TU NOMBRE</div>
+      <input value={name} onChange={e=>{setName(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&go()} maxLength={24} placeholder="Tu nombre..."
+        style={{width:"100%",background:"#000",color:C.white,border:`3px solid ${C.yellow}`,borderRadius:3,fontFamily:"'Press Start 2P'",fontSize:10,padding:"12px 14px",outline:"none",letterSpacing:1,boxSizing:"border-box",marginBottom:8}}/>
+      {err&&<div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:C.red,marginBottom:10}}>{err}</div>}
+      <button onClick={go} style={{width:"100%",background:C.red,color:C.white,border:`3px solid ${C.redDk}`,boxShadow:`0 5px 0 ${C.redDk}`,fontFamily:"'Press Start 2P'",fontSize:11,padding:"14px",cursor:"pointer",borderRadius:3,letterSpacing:2,marginTop:10,opacity:blink?1:0.8,transition:"opacity 0.1s"}}>▶ CONTINUAR ◀</button>
+    </Card>
+  </div>;
 }
 
 // ─── PANTALLA: ¿LISTO? ────────────────────────────────────────────────────────
 function ReadyScreen({ playerName, onStart }) {
-  const [blink, setBlink] = useState(true);
+  const [blink,setBlink]=useState(true);
   useEffect(()=>{ const iv=setInterval(()=>setBlink(b=>!b),600); return()=>clearInterval(iv); },[]);
-  return (
-    <div style={{textAlign:"center",paddingTop:24}}>
-      <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#555",letterSpacing:2,marginBottom:24}}>
-        DISEÑO DE JUEGOS · PARCIAL 2025
-      </div>
-      <div style={{display:"flex",justifyContent:"center",marginBottom:24}}>
-        <MarioSprite size={100}/>
-      </div>
-      <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:13,marginBottom:10,textShadow:`3px 3px 0 #000`}}>
-        ¡Hola, {playerName}!
-      </div>
-      <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>
-        20 preguntas · 40 segundos cada una
-      </div>
-      <button onClick={onStart} style={{
-        background:C.red,color:C.white,
-        border:`3px solid ${C.redDk}`,boxShadow:`0 6px 0 ${C.redDk}`,
-        fontFamily:"'Press Start 2P'",fontSize:13,padding:"18px 36px",
-        cursor:"pointer",borderRadius:3,letterSpacing:2,
-        opacity:blink?1:0.75,transition:"opacity 0.1s",
-        display:"block",margin:"0 auto"
-      }}>▶ ¿LISTO? ◀</button>
-    </div>
-  );
+  return <div style={{textAlign:"center",paddingTop:24}}>
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#555",letterSpacing:2,marginBottom:24}}>DISEÑO DE JUEGOS · PARCIAL 2025</div>
+    <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><MarioSprite size={100}/></div>
+    <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:13,marginBottom:10,textShadow:`3px 3px 0 #000`}}>¡Hola, {playerName}!</div>
+    <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>20 preguntas · 40 segundos cada una</div>
+    <button onClick={onStart} style={{background:C.red,color:C.white,border:`3px solid ${C.redDk}`,boxShadow:`0 6px 0 ${C.redDk}`,fontFamily:"'Press Start 2P'",fontSize:13,padding:"18px 36px",cursor:"pointer",borderRadius:3,letterSpacing:2,opacity:blink?1:0.75,transition:"opacity 0.1s",display:"block",margin:"0 auto"}}>▶ ¿LISTO? ◀</button>
+  </div>;
 }
 
 // ─── PANTALLA: QUIZ ───────────────────────────────────────────────────────────
 function QuizScreen({ playerName, onFinish }) {
-  const [questions] = useState(pickQuestions);
-  const [qi, setQi] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [secs, setSecs] = useState(TLIMIT);
-  const [picked, setPicked] = useState(null);
-  const ivRef = useRef(null);
-  const secsRef = useRef(TLIMIT);
-  const lockedRef = useRef(false);
+  const [questions]=useState(pickQ);
+  const [qi,setQi]=useState(0), [answers,setAnswers]=useState([]), [secs,setSecs]=useState(TLIMIT), [picked,setPicked]=useState(null);
+  const ivRef=useRef(null), secsRef=useRef(TLIMIT), lockedRef=useRef(false);
 
-  const advance = (sel) => {
+  const advance=(sel)=>{
     if(lockedRef.current) return;
-    lockedRef.current = true;
-    clearInterval(ivRef.current);
-    const newAnswers = [...answers, { selected: sel, timedOut: sel === null }];
-    if(qi + 1 >= questions.length) {
-      onFinish(questions, newAnswers);
-    } else {
-      setAnswers(newAnswers);
-      setPicked(null);
-      setSecs(TLIMIT);
-      secsRef.current = TLIMIT;
-      lockedRef.current = false;
-      setQi(i => i + 1);
-    }
+    lockedRef.current=true; clearInterval(ivRef.current);
+    const na=[...answers,{selected:sel,timedOut:sel===null}];
+    if(qi+1>=questions.length){ onFinish(questions,na); return; }
+    setAnswers(na); setPicked(null); setSecs(TLIMIT); secsRef.current=TLIMIT; lockedRef.current=false; setQi(i=>i+1);
   };
 
-  useEffect(() => {
-    secsRef.current = TLIMIT;
-    ivRef.current = setInterval(() => {
-      secsRef.current -= 1;
-      setSecs(secsRef.current);
-      if(secsRef.current <= 0) { clearInterval(ivRef.current); advance(null); }
-    }, 1000);
-    return () => clearInterval(ivRef.current);
-  }, [qi]);
+  useEffect(()=>{
+    secsRef.current=TLIMIT;
+    ivRef.current=setInterval(()=>{ secsRef.current-=1; setSecs(secsRef.current); if(secsRef.current<=0){clearInterval(ivRef.current);advance(null);} },1000);
+    return()=>clearInterval(ivRef.current);
+  },[qi]);
 
-  const q = questions[qi];
-
-  return (
-    <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.yellow}}>{playerName}</div>
-        <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:C.white}}>
-          {qi+1}<span style={{color:"#555"}}>/{questions.length}</span>
-        </div>
-      </div>
-      <div style={{background:"#111",border:"2px solid #2a2a2a",height:10,borderRadius:2,marginBottom:14,overflow:"hidden"}}>
-        <div style={{
-          width:`${(qi/questions.length)*100}%`,height:"100%",background:C.blue,
-          transition:"width 0.3s",
-          backgroundImage:`repeating-linear-gradient(90deg,${C.blue} 0,${C.blue} 8px,${C.blueDk} 8px,${C.blueDk} 12px)`
-        }}/>
-      </div>
-      <TimerBar secs={secs}/>
-      <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginTop:12,marginBottom:8,letterSpacing:1}}>
-        {q.tema.toUpperCase()}
-      </div>
-      <Card color={C.red} style={{marginBottom:16,padding:"20px 18px"}}>
-        <div style={{fontFamily:"'VT323'",fontSize:28,color:C.white,lineHeight:1.4}}>{q.q}</div>
-      </Card>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        {q.ops.map((op,i) => {
-          const isSel = picked === i;
-          return (
-            <button key={i}
-              onClick={()=>{ if(lockedRef.current) return; setPicked(i); advance(i); }}
-              style={{
-                background: isSel ? `${C.yellow}22` : "#0d0d1a",
-                border:`3px solid ${isSel ? C.yellow : "#2a2a2a"}`,
-                color: isSel ? C.yellow : "#ccc",
-                fontFamily:"'VT323'",fontSize:22,padding:"16px 12px",
-                cursor:"pointer",borderRadius:4,textAlign:"left",
-                transition:"all 0.1s",
-                boxShadow: isSel ? `0 0 12px ${C.yellow}44` : "2px 2px 0 #000"
-              }}
-              onMouseEnter={e=>{ if(!lockedRef.current){ e.currentTarget.style.borderColor=C.yellow; e.currentTarget.style.background=`${C.yellow}11`; }}}
-              onMouseLeave={e=>{ if(picked!==i){ e.currentTarget.style.borderColor="#2a2a2a"; e.currentTarget.style.background="#0d0d1a"; }}}
-            >
-              <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:"#666",marginRight:8}}>
-                {["A","B","C","D"][i]})
-              </span>
-              {op}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",gap:4,justifyContent:"center",marginTop:20,flexWrap:"wrap"}}>
-        {questions.map((_,i)=>(
-          <div key={i} style={{
-            width:12,height:12,borderRadius:"50%",
-            background: i<qi ? C.yellow : i===qi ? C.white : "#222",
-            border: i===qi ? `2px solid ${C.yellow}` : "none",
-            boxShadow: i===qi ? `0 0 8px ${C.yellow}` : "none",
-            transition:"all 0.2s"
-          }}/>
-        ))}
-      </div>
+  const q=questions[qi];
+  return <div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+      <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.yellow}}>{playerName}</div>
+      <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:C.white}}>{qi+1}<span style={{color:"#555"}}>/{questions.length}</span></div>
     </div>
-  );
+    <div style={{background:"#111",border:"2px solid #2a2a2a",height:10,borderRadius:2,marginBottom:14,overflow:"hidden"}}>
+      <div style={{width:`${(qi/questions.length)*100}%`,height:"100%",background:C.blue,transition:"width 0.3s",backgroundImage:`repeating-linear-gradient(90deg,${C.blue} 0,${C.blue} 8px,${C.blueDk} 8px,${C.blueDk} 12px)`}}/>
+    </div>
+    <TimerBar secs={secs}/>
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginTop:12,marginBottom:8,letterSpacing:1}}>{q.t.toUpperCase()}</div>
+    <Card color={C.red} style={{marginBottom:16,padding:"20px 18px"}}>
+      <div style={{fontFamily:"'VT323'",fontSize:28,color:C.white,lineHeight:1.4}}>{q.q}</div>
+    </Card>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      {q.ops.map((op,i)=>{
+        const isSel=picked===i;
+        return <button key={i} onClick={()=>{if(lockedRef.current)return;setPicked(i);advance(i);}}
+          style={{background:isSel?`${C.yellow}22`:"#0d0d1a",border:`3px solid ${isSel?C.yellow:"#2a2a2a"}`,color:isSel?C.yellow:"#ccc",fontFamily:"'VT323'",fontSize:22,padding:"16px 12px",cursor:"pointer",borderRadius:4,textAlign:"left",transition:"all 0.1s",boxShadow:isSel?`0 0 12px ${C.yellow}44`:"2px 2px 0 #000"}}
+          onMouseEnter={e=>{if(!lockedRef.current){e.currentTarget.style.borderColor=C.yellow;e.currentTarget.style.background=`${C.yellow}11`;}}}
+          onMouseLeave={e=>{if(picked!==i){e.currentTarget.style.borderColor="#2a2a2a";e.currentTarget.style.background="#0d0d1a";}}}>
+          <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:"#666",marginRight:8}}>{["A","B","C","D"][i]})</span>{op}
+        </button>;
+      })}
+    </div>
+    <div style={{display:"flex",gap:4,justifyContent:"center",marginTop:20,flexWrap:"wrap"}}>
+      {questions.map((_,i)=><div key={i} style={{width:12,height:12,borderRadius:"50%",background:i<qi?C.yellow:i===qi?C.white:"#222",border:i===qi?`2px solid ${C.yellow}`:"none",boxShadow:i===qi?`0 0 8px ${C.yellow}`:"none",transition:"all 0.2s"}}/>)}
+    </div>
+  </div>;
 }
 
 // ─── PANTALLA: RESULTADOS ─────────────────────────────────────────────────────
 function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }) {
-  const score = answers.filter((a,i) => a.selected === questions[i].ok).length;
-  const pct = Math.round((score/questions.length)*100);
-  const [stars, label, lc] = pct>=80 ? [3,"¡EXCELENTE!",C.yellow] : pct>=60 ? [2,"APROBADO",C.green] : [1,"A REPASAR",C.red];
-  const [sendStatus, setSendStatus] = useState("sending");
+  const score=answers.filter((a,i)=>a.selected===questions[i].ok).length;
+  const pct=Math.round((score/questions.length)*100);
+  const [stars,label,lc]=pct>=80?[3,"¡EXCELENTE!",C.yellow]:pct>=60?[2,"APROBADO",C.green]:[1,"A REPASAR",C.red];
 
-  useEffect(() => {
-    // 1. Guardar local para "Mis Intentos"
+  useEffect(()=>{
+    // Solo guardar en localStorage para "Mis Intentos"
     try {
-      const session = answers.map((a,i)=>({
-        nombre: playerName, tema: questions[i].tema, nro: i+1,
-        pregunta: questions[i].q,
-        respuesta: a.selected !== null ? questions[i].ops[a.selected] : "SIN RESPUESTA",
-        correcto: a.selected === questions[i].ok ? 1 : 0
-      }));
-      const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-      localStorage.setItem(LS_KEY, JSON.stringify([...existing, ...session]));
-    } catch(e) {}
+      const session=answers.map((a,i)=>({nombre:playerName,tema:questions[i].t,nro:i+1,pregunta:questions[i].q,respuesta:a.selected!==null?questions[i].ops[a.selected]:"SIN RESPUESTA",correcto:a.selected===questions[i].ok?1:0}));
+      const ex=JSON.parse(localStorage.getItem(LS_KEY)||"[]");
+      localStorage.setItem(LS_KEY,JSON.stringify([...ex,...session]));
+    } catch(e){}
+  },[]);
 
-    // 2. Enviar al sheet via form oculto (nunca bloqueado por CORS)
-    const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-    try {
-      document.getElementById("_f_nombre").value   = playerName;
-      document.getElementById("_f_correctos").value = correctos;
-      document.getElementById("_f_total").value    = String(score);
-      document.getElementById("_gas_form").submit();
-      setSendStatus("ok");
-    } catch(e) {
-      setSendStatus("error");
-    }
-  }, []);
-
-  return (
-    <div>
-      <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:12}}>
-          {[0,1,2].map(i=><Star key={i} size={32} lit={i<stars}/>)}
-        </div>
-        <div style={{fontFamily:"'Press Start 2P'",fontSize:14,color:lc,marginBottom:8,textShadow:`3px 3px 0 #000`}}>
-          {label}
-        </div>
-        <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#888",marginBottom:6}}>{playerName}</div>
-        <div style={{fontFamily:"'VT323'",fontSize:38,color:C.white,marginBottom:14,textShadow:`2px 2px 0 #000`}}>
-          {score} / {questions.length}
-          <span style={{fontSize:24,color:"#666",marginLeft:12}}>({pct}%)</span>
-        </div>
-        <div style={{background:"#111",border:"2px solid #2a2a2a",height:16,borderRadius:2,overflow:"hidden",marginBottom:12}}>
-          <div style={{width:`${pct}%`,height:"100%",background:lc,
-            backgroundImage:`repeating-linear-gradient(90deg,${lc} 0,${lc} 10px,${lc}99 10px,${lc}99 16px)`}}/>
-        </div>
-        <div style={{fontFamily:"'Press Start 2P'",fontSize:7,
-          color: sendStatus==="ok" ? C.green : sendStatus==="error" ? C.red : "#555"}}>
-          {sendStatus==="sending" && "⏳ guardando resultados..."}
-          {sendStatus==="ok"      && "✓ resultados guardados"}
-          {sendStatus==="error"   && "✗ error al guardar — avisá al docente"}
-        </div>
+  return <div>
+    <div style={{textAlign:"center",marginBottom:24}}>
+      <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:12}}>
+        {[0,1,2].map(i=><Star key={i} size={32} lit={i<stars}/>)}
       </div>
-
-      <div style={{fontFamily:"'Press Start 2P'",color:"#777",fontSize:8,marginBottom:14,letterSpacing:1}}>
-        REVISIÓN DE RESPUESTAS
+      <div style={{fontFamily:"'Press Start 2P'",fontSize:14,color:lc,marginBottom:8,textShadow:`3px 3px 0 #000`}}>{label}</div>
+      <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#888",marginBottom:6}}>{playerName}</div>
+      <div style={{fontFamily:"'VT323'",fontSize:38,color:C.white,marginBottom:14,textShadow:`2px 2px 0 #000`}}>
+        {score} / {questions.length}<span style={{fontSize:24,color:"#666",marginLeft:12}}>({pct}%)</span>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
-        {questions.map((q,i)=>{
-          const a = answers[i];
-          const correct = a.selected === q.ok;
-          return (
-            <div key={i} style={{
-              background: correct ? "#081808" : "#180808",
-              border:`2px solid ${correct ? C.green : C.red}`,
-              borderRadius:4, padding:"14px 16px", boxShadow:`2px 2px 0 #000`
-            }}>
-              <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
-                <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:correct?C.green:C.red,minWidth:16,marginTop:2}}>
-                  {correct?"✓":"✗"}
-                </span>
-                <div>
-                  <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginBottom:5}}>
-                    {String(i+1).padStart(2,"0")} · {q.tema.toUpperCase()}
-                  </div>
-                  <div style={{fontFamily:"'VT323'",fontSize:20,color:"#ddd",lineHeight:1.4}}>{q.q}</div>
-                </div>
-              </div>
-              <div style={{paddingLeft:26}}>
-                {!correct && (
-                  <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#ff6666",marginBottom:6}}>
-                    {a.timedOut ? "⏰ SIN RESPUESTA" : `✗ Tu resp: ${q.ops[a.selected]}`}
-                  </div>
-                )}
-                <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:C.green}}>
-                  ✓ {q.ops[q.ok]}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
-        <Btn color={C.red} onClick={onRestart} style={{fontSize:8}}>🔄 JUGAR DE NUEVO</Btn>
-        <Btn color={C.blue} onClick={onMyScores} style={{fontSize:8}}>📋 MIS INTENTOS</Btn>
+      <div style={{background:"#111",border:"2px solid #2a2a2a",height:16,borderRadius:2,overflow:"hidden",marginBottom:10}}>
+        <div style={{width:`${pct}%`,height:"100%",background:lc,backgroundImage:`repeating-linear-gradient(90deg,${lc} 0,${lc} 10px,${lc}99 10px,${lc}99 16px)`}}/>
       </div>
     </div>
-  );
+    <div style={{fontFamily:"'Press Start 2P'",color:"#777",fontSize:8,marginBottom:14,letterSpacing:1}}>REVISIÓN DE RESPUESTAS</div>
+    <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+      {questions.map((q,i)=>{
+        const a=answers[i], ok=a.selected===q.ok;
+        return <div key={i} style={{background:ok?"#081808":"#180808",border:`2px solid ${ok?C.green:C.red}`,borderRadius:4,padding:"14px 16px",boxShadow:"2px 2px 0 #000"}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
+            <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:ok?C.green:C.red,minWidth:16,marginTop:2}}>{ok?"✓":"✗"}</span>
+            <div>
+              <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginBottom:5}}>{String(i+1).padStart(2,"0")} · {q.t.toUpperCase()}</div>
+              <div style={{fontFamily:"'VT323'",fontSize:20,color:"#ddd",lineHeight:1.4}}>{q.q}</div>
+            </div>
+          </div>
+          <div style={{paddingLeft:26}}>
+            {!ok&&<div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#ff6666",marginBottom:6}}>{a.timedOut?"⏰ SIN RESPUESTA":`✗ Tu resp: ${q.ops[a.selected]}`}</div>}
+            <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:C.green}}>✓ {q.ops[q.ok]}</div>
+          </div>
+        </div>;
+      })}
+    </div>
+    <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
+      <Btn color={C.red} onClick={onRestart} style={{fontSize:8}}>🔄 JUGAR DE NUEVO</Btn>
+      <Btn color={C.blue} onClick={onMyScores} style={{fontSize:8}}>📋 MIS INTENTOS</Btn>
+    </div>
+  </div>;
 }
 
 // ─── PANTALLA: MIS INTENTOS ───────────────────────────────────────────────────
 function MyScoresScreen({ playerName, onBack }) {
-  const [attempts, setAttempts] = useState([]);
-
-  useEffect(() => {
-    const data = loadMyScores(playerName);
-    const grouped = [];
-    for(let i=0; i<data.length; i+=20) grouped.push(data.slice(i, i+20));
-    setAttempts(grouped);
-  }, []);
-
-  return (
-    <div>
-      <Btn color={C.brown} onClick={onBack} style={{fontSize:8,marginBottom:20}}>← VOLVER</Btn>
-      <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:9,marginBottom:4,textShadow:`2px 2px 0 #000`}}>
-        📋 MIS INTENTOS
+  const [attempts,setAttempts]=useState([]);
+  useEffect(()=>{
+    const data=JSON.parse(localStorage.getItem(LS_KEY)||"[]").filter(s=>s.nombre===playerName);
+    const g=[]; for(let i=0;i<data.length;i+=20) g.push(data.slice(i,i+20));
+    setAttempts(g);
+  },[]);
+  return <div>
+    <Btn color={C.brown} onClick={onBack} style={{fontSize:8,marginBottom:20}}>← VOLVER</Btn>
+    <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:9,marginBottom:4,textShadow:"2px 2px 0 #000"}}>📋 MIS INTENTOS</div>
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginBottom:20}}>{playerName}</div>
+    {attempts.length===0
+      ?<div style={{fontFamily:"'VT323'",color:"#555",fontSize:22,textAlign:"center",padding:40}}>Aún no completaste ningún quiz.</div>
+      :<div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {attempts.map((att,idx)=>{
+          const ok=att.filter(s=>s.correcto===1).length, tot=att.length, p=Math.round((ok/tot)*100);
+          const col=p>=80?C.green:p>=60?C.yellow:C.red;
+          return <Card key={idx} color={col} style={{padding:"16px 18px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontFamily:"'Press Start 2P'",color:"#666",fontSize:7}}>INTENTO #{idx+1}</div>
+              <div style={{fontFamily:"'Press Start 2P'",fontSize:10,color:col}}>{ok}/{tot} · {p}%</div>
+            </div>
+            <div style={{background:"#111",border:"2px solid #222",height:10,borderRadius:2,overflow:"hidden"}}>
+              <div style={{width:`${p}%`,height:"100%",background:col,backgroundImage:`repeating-linear-gradient(90deg,${col} 0,${col} 8px,${col}88 8px,${col}88 12px)`}}/>
+            </div>
+            <div style={{display:"flex",gap:3,marginTop:10,flexWrap:"wrap"}}>
+              {att.map((s,i)=><div key={i} style={{width:14,height:14,borderRadius:2,background:s.correcto===1?C.green:C.red,boxShadow:s.correcto===1?`0 0 4px ${C.green}88`:"none"}}/>)}
+            </div>
+          </Card>;
+        })}
       </div>
-      <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginBottom:20}}>{playerName}</div>
-      {attempts.length===0 ? (
-        <div style={{fontFamily:"'VT323'",color:"#555",fontSize:22,textAlign:"center",padding:40}}>
-          Aún no completaste ningún quiz.
-        </div>
-      ) : (
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {attempts.map((attempt, idx) => {
-            const correct = attempt.filter(s=>s.correcto===1).length;
-            const total = attempt.length;
-            const pct = Math.round((correct/total)*100);
-            const col = pct>=80 ? C.green : pct>=60 ? C.yellow : C.red;
-            return (
-              <Card key={idx} color={col} style={{padding:"16px 18px"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontFamily:"'Press Start 2P'",color:"#666",fontSize:7}}>INTENTO #{idx+1}</div>
-                  <div style={{fontFamily:"'Press Start 2P'",fontSize:10,color:col}}>{correct}/{total} · {pct}%</div>
-                </div>
-                <div style={{background:"#111",border:"2px solid #222",height:10,borderRadius:2,overflow:"hidden"}}>
-                  <div style={{width:`${pct}%`,height:"100%",background:col,
-                    backgroundImage:`repeating-linear-gradient(90deg,${col} 0,${col} 8px,${col}88 8px,${col}88 12px)`}}/>
-                </div>
-                <div style={{display:"flex",gap:3,marginTop:10,flexWrap:"wrap"}}>
-                  {attempt.map((s,i)=>(
-                    <div key={i} style={{
-                      width:14,height:14,borderRadius:2,
-                      background: s.correcto===1 ? C.green : C.red,
-                      boxShadow: s.correcto===1 ? `0 0 4px ${C.green}88` : "none"
-                    }}/>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+    }
+  </div>;
 }
 
-// ─── APP ROOT ─────────────────────────────────────────────────────────────────
-const SCREENS = { NAME:"name", READY:"ready", QUIZ:"quiz", RESULTS:"results", SCORES:"scores" };
+// ─── APP ──────────────────────────────────────────────────────────────────────
+const S={NAME:"name",READY:"ready",QUIZ:"quiz",SUBMIT:"submit",RESULTS:"results",SCORES:"scores"};
+
+// ─── PANTALLA: ENVIAR ─────────────────────────────────────────────────────────
+function SubmitScreen({ playerName, questions, answers, onSent }) {
+  const score = answers.filter((a,i)=>a.selected===questions[i].ok).length;
+  const pct   = Math.round((score/questions.length)*100);
+  const [lc]  = pct>=80?[C.yellow]:pct>=60?[C.green]:[C.red];
+  const [sending, setSending] = useState(false);
+
+  const handleEnviar = () => {
+    setSending(true);
+    // Llenar y enviar el formulario oculto
+    document.getElementById("_f_nombre").value    = playerName;
+    document.getElementById("_f_correctos").value = answers.map((a,i)=>a.selected===questions[i].ok?1:0).join(",");
+    document.getElementById("_f_total").value     = String(score);
+    document.getElementById("_gas_form").submit();
+    // Pequeño delay para que el form salga antes de redirigir
+    setTimeout(() => onSent(), 800);
+  };
+
+  return <div style={{textAlign:"center",paddingTop:32}}>
+    <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+      <MarioSprite size={90}/>
+    </div>
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:12,color:C.white,marginBottom:8,textShadow:`3px 3px 0 #000`}}>
+      ¡QUIZ COMPLETADO!
+    </div>
+    <div style={{fontFamily:"'VT323'",fontSize:34,color:lc,marginBottom:6,textShadow:`2px 2px 0 #000`}}>
+      {score} / {questions.length} correctas
+    </div>
+    <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#666",marginBottom:40}}>
+      {playerName}
+    </div>
+
+    <Card color={C.yellow} style={{maxWidth:380,margin:"0 auto",padding:"28px 24px"}}>
+      <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.yellow,marginBottom:16}}>
+        ¿LISTO PARA ENVIAR?
+      </div>
+      <div style={{fontFamily:"'VT323'",fontSize:20,color:"#aaa",marginBottom:24,lineHeight:1.5}}>
+        Tus respuestas se enviarán al registro del docente. Después podrás ver las correcciones.
+      </div>
+      <button onClick={handleEnviar} disabled={sending} style={{
+        width:"100%", background: sending ? "#333" : C.green, color: sending ? "#666" : C.black,
+        border:`3px solid ${sending?"#444":C.greenDk}`,
+        boxShadow: sending ? "none" : `0 5px 0 ${C.greenDk}`,
+        fontFamily:"'Press Start 2P'",fontSize:12,padding:"16px",
+        cursor: sending?"default":"pointer", borderRadius:3,letterSpacing:2,
+        transition:"all 0.2s"
+      }}>
+        {sending ? "⏳ ENVIANDO..." : "📤 ENVIAR RESPUESTAS"}
+      </button>
+    </Card>
+  </div>;
+}
 
 function App() {
-  const [screen, setScreen] = useState(SCREENS.NAME);
-  const [player, setPlayer] = useState(null);
-  const [quizResult, setQuizResult] = useState(null);
-
-  const handleName    = (name) => { setPlayer(name); setScreen(SCREENS.READY); };
-  const handleStart   = () => setScreen(SCREENS.QUIZ);
-  const handleFinish  = (questions, answers) => { setQuizResult({questions,answers}); setScreen(SCREENS.RESULTS); };
-  const handleRestart = () => { setQuizResult(null); setScreen(SCREENS.READY); };
-
-  return (
-    <div style={{
-      minHeight:"100vh", background:C.bgDark,
-      backgroundImage:`radial-gradient(ellipse at 15% 0%,${C.bg}1a 0%,transparent 55%),
-        radial-gradient(ellipse at 85% 100%,${C.red}0d 0%,transparent 55%)`,
-      color:C.white, padding:"20px 20px 56px",
-    }}>
+  const [screen,setScreen]=useState(S.NAME), [player,setPlayer]=useState(null), [result,setResult]=useState(null);
+  return <>
+    <div style={{minHeight:"100vh",background:C.bgDark,backgroundImage:`radial-gradient(ellipse at 15% 0%,${C.bg}1a 0%,transparent 55%),radial-gradient(ellipse at 85% 100%,${C.red}0d 0%,transparent 55%)`,color:C.white,padding:"20px 20px 56px"}}>
       <div style={{maxWidth:560,margin:"0 auto"}}>
-        {screen===SCREENS.NAME    && <NameScreen onDone={handleName}/>}
-        {screen===SCREENS.READY   && <ReadyScreen playerName={player} onStart={handleStart}/>}
-        {screen===SCREENS.QUIZ    && <QuizScreen playerName={player} onFinish={handleFinish}/>}
-        {screen===SCREENS.RESULTS && quizResult &&
-          <ResultsScreen playerName={player} questions={quizResult.questions} answers={quizResult.answers}
-            onRestart={handleRestart} onMyScores={()=>setScreen(SCREENS.SCORES)}/>}
-        {screen===SCREENS.SCORES  &&
-          <MyScoresScreen playerName={player} onBack={()=>setScreen(quizResult?SCREENS.RESULTS:SCREENS.READY)}/>}
+        {screen===S.NAME    && <NameScreen onDone={n=>{setPlayer(n);setScreen(S.READY);}}/>}
+        {screen===S.READY   && <ReadyScreen playerName={player} onStart={()=>setScreen(S.QUIZ)}/>}
+        {screen===S.QUIZ    && <QuizScreen playerName={player} onFinish={(q,a)=>{setResult({q,a});setScreen(S.SUBMIT);}}/>}
+        {screen===S.SUBMIT  && result && <SubmitScreen playerName={player} questions={result.q} answers={result.a} onSent={()=>setScreen(S.RESULTS)}/>}
+        {screen===S.RESULTS && result && <ResultsScreen playerName={player} questions={result.q} answers={result.a} onRestart={()=>{setResult(null);setScreen(S.READY);}} onMyScores={()=>setScreen(S.SCORES)}/>}
+        {screen===S.SCORES  && <MyScoresScreen playerName={player} onBack={()=>setScreen(result?S.RESULTS:S.READY)}/>}
       </div>
     </div>
-  );
+  </>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 
-<!-- Formulario oculto para enviar datos a GAS sin bloqueos de CORS -->
-<iframe name="_gas_frame" id="_gas_frame" style="display:none"></iframe>
+<!-- Formulario oculto: envía datos a Google Sheets sin bloqueos de CORS -->
+<iframe name="_gas_frame" style="display:none"></iframe>
 <form id="_gas_form" method="GET" action="https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec" target="_gas_frame" style="display:none">
   <input type="hidden" id="_f_nombre"    name="nombre"/>
   <input type="hidden" id="_f_correctos" name="correctos"/>
