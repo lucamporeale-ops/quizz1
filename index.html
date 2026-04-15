@@ -341,18 +341,18 @@ function SubmitScreen({ playerName, questions, answers, onSent }) {
   const [lc]  = pct>=80?[C.yellow]:pct>=60?[C.green]:[C.red];
   const [sending, setSending] = useState(false);
 
-  const handleEnviar = () => {
-    setSending(true);
-    const correctos = answers.map((a,i)=>a.selected===questions[i].ok?1:0).join(",");
-    const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
-    const url = GAS_URL + "?" + params.toString();
+ const handleEnviar = () => {
+  setSending(true);
+  const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
+  const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
+  const url = GAS_URL + "?" + params.toString();
 
-    // credentials:'omit' evita que Google redirija por sesión activa
-    fetch(url, { mode: "no-cors", credentials: "omit" })
-      .then(() => setTimeout(() => onSent(), 400))
-      .catch(() => setTimeout(() => onSent(), 400)); // igual avanza aunque falle
-  };
-
+  
+  const img = new Image();
+  img.onload  = () => setTimeout(() => onSent(), 200);
+  img.onerror = () => setTimeout(() => onSent(), 200); // igual avanza
+  img.src = url;
+};
   return <div style={{textAlign:"center",paddingTop:32}}>
     <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
       <MarioSprite size={90}/>
