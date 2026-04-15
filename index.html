@@ -27,7 +27,7 @@ const { useState, useEffect, useRef } = React;
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec";
 const LS_KEY  = "gd_mis_intentos";
-const TOTAL   = 20;
+const TOTAL   = 12;
 const TLIMIT  = 40;
 
 const C = {
@@ -70,50 +70,126 @@ function Mushroom({ size=32 }) {
 
 // ─── PREGUNTAS ────────────────────────────────────────────────────────────────
 const ALL_Q = [
-  {q:"¿Quién acuñó el concepto 'Homo Ludens'?", ops:["Roger Caillois","Johan Huizinga","Bernard Suits","Zimmerman"], ok:1, t:"Origen de los Juegos"},
-  {q:"El juego de Senet proviene de:", ops:["Mesopotamia","China","Egipto","Grecia"], ok:2, t:"Origen de los Juegos"},
-  {q:"Según Huizinga, el juego es __ respecto a la cultura:", ops:["Posterior","Simultáneo","Anterior","Independiente"], ok:2, t:"Origen de los Juegos"},
-  {q:"El 'Círculo Mágico' es:", ops:["Una mecánica de juego","El espacio separado donde ocurre el juego","Un tipo de juego ritual","La narrativa del juego"], ok:1, t:"Origen de los Juegos"},
-  {q:"¿Cuántas características define Caillois para el juego?", ops:["4","5","6","7"], ok:2, t:"¿Qué es el Juego?"},
-  {q:"El 'Lusory Attitude' fue propuesto por:", ops:["Huizinga","Caillois","Bernard Suits","Zimmerman"], ok:2, t:"¿Qué es el Juego?"},
-  {q:"¿Cuál NO es una característica del juego según Caillois?", ops:["Libre","Productivo","Incierto","Ficticio"], ok:1, t:"¿Qué es el Juego?"},
-  {q:"Salen & Zimmerman definen el juego como:", ops:["Una actividad ritual","Sistema con conflicto artificial y reglas","Una forma de arte","Actividad educativa"], ok:1, t:"¿Qué es el Juego?"},
-  {q:"Un juego de ruleta pertenece a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:1, t:"Tipos y Clasificación"},
-  {q:"Los juegos de rol (RPG) pertenecen principalmente a:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:2, t:"Tipos y Clasificación"},
-  {q:"PAIDIA vs LUDUS refiere a:", ops:["Individual vs grupal","Libre vs reglamentado","Digital vs analógico","Rápido vs lento"], ok:1, t:"Tipos y Clasificación"},
-  {q:"Un juego de VR con vértigo extremo es ejemplo de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:3, t:"Tipos y Clasificación"},
-  {q:"El ajedrez es ejemplo puro de:", ops:["AGON","ALEA","MIMICRY","ILINX"], ok:0, t:"Tipos y Clasificación"},
-  {q:"El HUD es:", ops:["Un tipo de control","Información persistente en pantalla","Un motor gráfico","Un tipo de mecánica"], ok:1, t:"Componentes del Videojuego"},
-  {q:"El 'Game Loop' consiste en:", ops:["Historia principal del juego","Input → Actualización → Renderizado","Menú principal","Sistema de guardado"], ok:1, t:"Componentes del Videojuego"},
-  {q:"¿Cuál NO es un componente básico de un videojuego?", ops:["Mecánicas","Narrativa","Presupuesto de producción","Audio"], ok:2, t:"Componentes del Videojuego"},
-  {q:"La diferencia entre UI y UX en videojuegos:", ops:["No hay diferencia","UI = elementos visuales; UX = experiencia completa","UX = gráficos; UI = sonido","UI = código; UX = arte"], ok:1, t:"Componentes del Videojuego"},
-  {q:"La mecánica central de Super Mario Odyssey es:", ops:["Disparar proyectiles","Capturar enemigos con Cappy","Construir bases","Gestionar recursos"], ok:1, t:"Mario Odyssey & Uncharted 4"},
-  {q:"Uncharted 4 pertenece al género:", ops:["Plataformas","Acción-aventura en 3ra persona","RPG","FPS"], ok:1, t:"Mario Odyssey & Uncharted 4"},
-  {q:"En Caillois, Mario Odyssey combina principalmente:", ops:["ALEA + ILINX","ILINX + MIMICRY","AGON + MIMICRY","Solo AGON"], ok:2, t:"Mario Odyssey & Uncharted 4"},
-  {q:"El Core Loop es:", ops:["La historia principal","El ciclo fundamental de acciones repetibles","El menú principal","El sistema de guardado"], ok:1, t:"El Núcleo del Juego"},
-  {q:"Un feedback loop POSITIVO en juegos:", ops:["Equilibra el juego","Amplifica ventajas (efecto bola de nieve)","Siempre reduce la dificultad","Beneficia al jugador perdedor"], ok:1, t:"El Núcleo del Juego"},
-  {q:"El 'Game Feel' o 'Juice' refiere a:", ops:["La narrativa del juego","El feedback sensorial inmediato de las acciones","El presupuesto de producción","La duración del juego"], ok:1, t:"El Núcleo del Juego"},
-  {q:"El 'Onboarding' es:", ops:["El menú inicial","El proceso de enseñanza del juego al jugador","Los créditos finales","El sistema de puntuación"], ok:1, t:"El Núcleo del Juego"},
-  {q:"En MDA, las Mecánicas son:", ops:["Lo que siente el jugador","Comportamientos emergentes","Las reglas y acciones disponibles","La narrativa del juego"], ok:2, t:"Mecánicas de Juego"},
-  {q:"Los 'verbos del juego' hacen referencia a:", ops:["El diálogo de los personajes","Las mecánicas (acciones disponibles)","Los géneros del juego","Los objetivos narrativos"], ok:1, t:"Mecánicas de Juego"},
-  {q:"El 'Possibility Space' es:", ops:["El mapa del juego","Todos los estados y acciones posibles bajo las reglas","El menú de opciones","La historia del juego"], ok:1, t:"Mecánicas de Juego"},
-  {q:"La 'Emergencia' en mecánicas ocurre cuando:", ops:["Hay bugs en el juego","Mecánicas simples crean comportamientos complejos","El jugador hace trampa","El diseñador agrega DLC"], ok:1, t:"Mecánicas de Juego"},
-  {q:"Las mecánicas las controla directamente:", ops:["El jugador","El productor ejecutivo","El diseñador de juegos","El motor gráfico"], ok:2, t:"Mecánicas de Juego"},
-  {q:"Las Dinámicas en MDA son:", ops:["Las reglas del juego","El comportamiento emergente del sistema en runtime","La respuesta emocional del jugador","Los gráficos del juego"], ok:1, t:"Dinámica"},
-  {q:"¿Quién controla directamente las Dinámicas?", ops:["El diseñador","El programador","Emergen de la interacción — nadie las controla directamente","El productor"], ok:2, t:"Dinámica"},
-  {q:"El 'Metagame' es:", ops:["El tutorial del juego","Estrategias emergentes de la comunidad de jugadores","El modo historia","Los DLCs del juego"], ok:1, t:"Dinámica"},
-  {q:"La diferencia clave entre Mecánica y Dinámica:", ops:["Solo difieren en costo de desarrollo","La mecánica se diseña; la dinámica emerge","La dinámica siempre es más importante","Solo aplica en juegos online"], ok:1, t:"Dinámica"},
-  {q:"El 'griefing' es un ejemplo de:", ops:["Una mecánica de diseño","Una estética del MDA","Una dinámica emergente","Un componente básico del videojuego"], ok:2, t:"Dinámica"},
-  {q:"En MDA, la Estética es:", ops:["El arte visual del juego","La respuesta emocional del jugador","Las reglas del juego","Los comportamientos emergentes"], ok:1, t:"Estética (MDA)"},
-  {q:"¿Cuántas estéticas define el MDA Framework?", ops:["4","6","8","10"], ok:2, t:"Estética (MDA)"},
-  {q:"La estética 'Fellowship' refiere a:", ops:["El placer visual y sensorial","El desafío del juego","La conexión social con otros jugadores","La narrativa del juego"], ok:2, t:"Estética (MDA)"},
-  {q:"El orden causal correcto en MDA es:", ops:["Estética→Dinámica→Mecánica","Dinámica→Mecánica→Estética","Mecánica→Dinámica→Estética","No existe un orden"], ok:2, t:"Estética (MDA)"},
-  {q:"Dark Souls es conocido principalmente por la estética:", ops:["Submission","Fellowship","Challenge","Fantasy"], ok:2, t:"Estética (MDA)"},
-  {q:"Animal Crossing destaca las estéticas:", ops:["Challenge y Fantasy","Submission y Expression","Narrative pura","AGON y ILINX"], ok:1, t:"Estética (MDA)"},
+  {
+    q: "¿Cuáles son los 3 pilares en el desarrollo de los videojuegos?",
+    ops: ["Opinión, Pensamiento y Decisiones", "Cultura Lúdica, Industria y Comunicaciones", "Marketing, precio y plataforma"],
+    ok: 1,
+    t: "Desarrollo de Videojuegos"
+  },
+  {
+    q: "¿Qué principio menciona Jesse Schell como fundamental para mejorar la calidad del juego?",
+    ops: ["The Rule of the Loop", "The Lens of Experience", "The Cycle of Creation"],
+    ok: 0,
+    t: "Jesse Schell"
+  },
+  {
+    q: "¿Cómo describe el autor el proceso de diseño de juegos en relación con ser lineal o no lineal?",
+    ops: [
+      "No es un proceso lineal, sino de ciclos constantes de prueba y mejora",
+      "Es un proceso lineal donde todo se planifica al inicio y se ejecuta perfectamente al final",
+      "Es un proceso aleatorio sin estructura definida"
+    ],
+    ok: 0,
+    t: "Diseño de Juegos"
+  },
+  {
+    q: "¿Qué advertencia hace Schell sobre las iteraciones en el proceso de diseño?",
+    ops: [
+      "Que deben tener una intención, no solo ser repetitivas",
+      "Que cuantas más iteraciones hagas, mejor será el juego sin importar la calidad",
+      "Que solo se deben hacer iteraciones al final del desarrollo"
+    ],
+    ok: 0,
+    t: "Jesse Schell"
+  },
+  {
+    q: "¿Cuál de las siguientes afirmaciones describe mejor al juego como fenómeno cultural?",
+    ops: [
+      "Es una actividad exclusiva de la infancia, sin relevancia en la vida adulta.",
+      "Es una práctica universal presente en todas las culturas humanas a lo largo de la historia.",
+      "Es un producto moderno surgido con la industria del entretenimiento del siglo XX.",
+      "Es una conducta instintiva propia de los animales, sin dimensión cultural en los humanos."
+    ],
+    ok: 1,
+    t: "El Juego como Fenómeno Cultural"
+  },
+  {
+    q: "Johan Huizinga, en su obra Homo Ludens, propone que el juego:",
+    ops: [
+      "Es una actividad secundaria que surge cuando las necesidades básicas están satisfechas.",
+      "Debe ser siempre competitivo para que tenga valor cultural.",
+      "Es la base de toda cultura humana y precede a la civilización misma.",
+      "Solo tiene sentido dentro de un marco de reglas formales e institucionales."
+    ],
+    ok: 2,
+    t: "Referentes y Teorías"
+  },
+  {
+    q: "¿Cuál de las siguientes opciones corresponde a una de las categorías propuestas por Roger Caillois para clasificar los juegos?",
+    ops: [
+      "Juegos de estrategia, juegos de acción y juegos de rol.",
+      "Juegos de azar (alea), competencia (agôn), simulacro (mimicry) y vértigo (ilinx).",
+      "Juegos analógicos, juegos digitales y juegos híbridos.",
+      "Juegos individuales, juegos colectivos y juegos mixtos."
+    ],
+    ok: 1,
+    t: "Tipos y Géneros"
+  },
+  {
+    q: "¿Cuál es considerado uno de los juegos más antiguos registrados, con evidencia arqueológica de más de 5.000 años?",
+    ops: [
+      "El ajedrez, originado en la India medieval como simulación de batallas.",
+      "El Senet, juego de mesa del antiguo Egipto hallado en tumbas faraónicas.",
+      "Los juegos olímpicos griegos, primera competencia reglamentada de la historia.",
+      "El dominó, creado en China durante la dinastía Tang."
+    ],
+    ok: 1,
+    t: "Historia del Juego"
+  },
+  {
+    q: "¿Por qué es importante documentar el desarrollo de un videojuego?",
+    ops: [
+      "Permite que el arreglo de bugs sea más rápido y sencillo.",
+      "Porque ayuda a que el proyecto recaude más fondos para ser desarrollado más rápido.",
+      "Le permite al equipo entender cómo el proyecto va a ser desarrollado y cómo funciona internamente, facilitando el trabajo."
+    ],
+    ok: 2,
+    t: "Documentación y Gestión"
+  },
+  {
+    q: "¿Por qué hay que mantener una comunicación constante con el equipo de desarrollo?",
+    ops: [
+      "Para que el desarrollo del proyecto se mantenga al día con actualizaciones frecuentes.",
+      "Para que el juego pueda ser terminado rápidamente para un lanzamiento temprano.",
+      "Para que el proyecto termine siendo un éxito absoluto en ventas."
+    ],
+    ok: 0,
+    t: "Documentación y Gestión"
+  },
+  {
+    q: "¿Cuál es la importancia de crear un equipo de desarrollo para un videojuego?",
+    ops: [
+      "Permite que otras personas hagan todo el trabajo sin necesidad de que te involucres.",
+      "Ayuda a que el proyecto tenga un desarrollo más confuso y lento.",
+      "Ayuda a facilitar el desarrollo dividiendo las tareas entre diferentes miembros del equipo."
+    ],
+    ok: 2,
+    t: "Equipo de Desarrollo"
+  },
+  {
+    q: "¿Qué función cumplen los roles en un equipo de desarrollo?",
+    ops: [
+      "Permite que todos los miembros del equipo trabajen en una misma área del proyecto.",
+      "Estructuran el trabajo permitiendo que miembros especializados colaboren en el proyecto.",
+      "Cumple la función de hacer que los miembros desarrollen el proyecto sin ningún recurso."
+    ],
+    ok: 1,
+    t: "Equipo de Desarrollo"
+  },
 ];
 
 function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
-function pickQ() { return shuffle(ALL_Q).slice(0,TOTAL); }
+function pickQ() { return shuffle(ALL_Q).slice(0, TOTAL); }
 
 // ─── UI ───────────────────────────────────────────────────────────────────────
 function Btn({ children, color=C.red, onClick, style={} }) {
@@ -184,7 +260,7 @@ function ReadyScreen({ playerName, onStart }) {
     <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#555",letterSpacing:2,marginBottom:24}}>DISEÑO DE JUEGOS · PARCIAL 2025</div>
     <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><MarioSprite size={100}/></div>
     <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:13,marginBottom:10,textShadow:`3px 3px 0 #000`}}>¡Hola, {playerName}!</div>
-    <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>20 preguntas · 40 segundos cada una</div>
+    <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>{TOTAL} preguntas · {TLIMIT} segundos cada una</div>
     <button onClick={onStart} style={{background:C.red,color:C.white,border:`3px solid ${C.redDk}`,boxShadow:`0 6px 0 ${C.redDk}`,fontFamily:"'Press Start 2P'",fontSize:13,padding:"18px 36px",cursor:"pointer",borderRadius:3,letterSpacing:2,opacity:blink?1:0.75,transition:"opacity 0.1s",display:"block",margin:"0 auto"}}>▶ ¿LISTO? ◀</button>
   </div>;
 }
@@ -210,6 +286,7 @@ function QuizScreen({ playerName, onFinish }) {
   },[qi]);
 
   const q=questions[qi];
+  const optLabels=["A","B","C","D"];
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.yellow}}>{playerName}</div>
@@ -223,14 +300,14 @@ function QuizScreen({ playerName, onFinish }) {
     <Card color={C.red} style={{marginBottom:16,padding:"20px 18px"}}>
       <div style={{fontFamily:"'VT323'",fontSize:28,color:C.white,lineHeight:1.4}}>{q.q}</div>
     </Card>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {q.ops.map((op,i)=>{
         const isSel=picked===i;
         return <button key={i} onClick={()=>{if(lockedRef.current)return;setPicked(i);advance(i);}}
           style={{background:isSel?`${C.yellow}22`:"#0d0d1a",border:`3px solid ${isSel?C.yellow:"#2a2a2a"}`,color:isSel?C.yellow:"#ccc",fontFamily:"'VT323'",fontSize:22,padding:"16px 12px",cursor:"pointer",borderRadius:4,textAlign:"left",transition:"all 0.1s",boxShadow:isSel?`0 0 12px ${C.yellow}44`:"2px 2px 0 #000"}}
           onMouseEnter={e=>{if(!lockedRef.current){e.currentTarget.style.borderColor=C.yellow;e.currentTarget.style.background=`${C.yellow}11`;}}}
           onMouseLeave={e=>{if(picked!==i){e.currentTarget.style.borderColor="#2a2a2a";e.currentTarget.style.background="#0d0d1a";}}}>
-          <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:"#666",marginRight:8}}>{["A","B","C","D"][i]})</span>{op}
+          <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:"#666",marginRight:8}}>{optLabels[i]})</span>{op}
         </button>;
       })}
     </div>
@@ -247,7 +324,6 @@ function ResultsScreen({ playerName, questions, answers, onRestart, onMyScores }
   const [stars,label,lc]=pct>=80?[3,"¡EXCELENTE!",C.yellow]:pct>=60?[2,"APROBADO",C.green]:[1,"A REPASAR",C.red];
 
   useEffect(()=>{
-    // Solo guardar en localStorage para "Mis Intentos"
     try {
       const session=answers.map((a,i)=>({nombre:playerName,tema:questions[i].t,nro:i+1,pregunta:questions[i].q,respuesta:a.selected!==null?questions[i].ops[a.selected]:"SIN RESPUESTA",correcto:a.selected===questions[i].ok?1:0}));
       const ex=JSON.parse(localStorage.getItem(LS_KEY)||"[]");
@@ -300,7 +376,7 @@ function MyScoresScreen({ playerName, onBack }) {
   const [attempts,setAttempts]=useState([]);
   useEffect(()=>{
     const data=JSON.parse(localStorage.getItem(LS_KEY)||"[]").filter(s=>s.nombre===playerName);
-    const g=[]; for(let i=0;i<data.length;i+=20) g.push(data.slice(i,i+20));
+    const g=[]; for(let i=0;i<data.length;i+=TOTAL) g.push(data.slice(i,i+TOTAL));
     setAttempts(g);
   },[]);
   return <div>
@@ -331,28 +407,26 @@ function MyScoresScreen({ playerName, onBack }) {
   </div>;
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
-const S={NAME:"name",READY:"ready",QUIZ:"quiz",SUBMIT:"submit",RESULTS:"results",SCORES:"scores"};
-
 // ─── PANTALLA: ENVIAR ─────────────────────────────────────────────────────────
 function SubmitScreen({ playerName, questions, answers, onSent }) {
   const score = answers.filter((a,i)=>a.selected===questions[i].ok).length;
   const pct   = Math.round((score/questions.length)*100);
-  const [lc]  = pct>=80?[C.yellow]:pct>=60?[C.green]:[C.red];
+  const lc    = pct>=80?C.yellow:pct>=60?C.green:C.red;
   const [sending, setSending] = useState(false);
 
- const handleEnviar = () => {
-  setSending(true);
-  const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-  const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
-  const url = GAS_URL + "?" + params.toString();
+  const handleEnviar = () => {
+    setSending(true);
+    const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
+    const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
+    const url = GAS_URL + "?" + params.toString();
 
-  
-  const img = new Image();
-  img.onload  = () => setTimeout(() => onSent(), 200);
-  img.onerror = () => setTimeout(() => onSent(), 200); // igual avanza
-  img.src = url;
-};
+    // ✅ Image() sigue los redirects de Google sin restricciones CORS
+    const img = new Image();
+    img.onload  = () => setTimeout(() => onSent(), 200);
+    img.onerror = () => setTimeout(() => onSent(), 200);
+    img.src = url;
+  };
+
   return <div style={{textAlign:"center",paddingTop:32}}>
     <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
       <MarioSprite size={90}/>
@@ -366,7 +440,6 @@ function SubmitScreen({ playerName, questions, answers, onSent }) {
     <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#666",marginBottom:40}}>
       {playerName}
     </div>
-
     <Card color={C.yellow} style={{maxWidth:380,margin:"0 auto",padding:"28px 24px"}}>
       <div style={{fontFamily:"'Press Start 2P'",fontSize:8,color:C.yellow,marginBottom:16}}>
         ¿LISTO PARA ENVIAR?
@@ -388,6 +461,9 @@ function SubmitScreen({ playerName, questions, answers, onSent }) {
   </div>;
 }
 
+// ─── APP ──────────────────────────────────────────────────────────────────────
+const S={NAME:"name",READY:"ready",QUIZ:"quiz",SUBMIT:"submit",RESULTS:"results",SCORES:"scores"};
+
 function App() {
   const [screen,setScreen]=useState(S.NAME), [player,setPlayer]=useState(null), [result,setResult]=useState(null);
   return <>
@@ -406,6 +482,5 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-
 </body>
 </html>
