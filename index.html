@@ -343,13 +343,14 @@ function SubmitScreen({ playerName, questions, answers, onSent }) {
 
   const handleEnviar = () => {
     setSending(true);
-    // Llenar y enviar el formulario oculto
-    document.getElementById("_f_nombre").value    = playerName;
-    document.getElementById("_f_correctos").value = answers.map((a,i)=>a.selected===questions[i].ok?1:0).join(",");
-    document.getElementById("_f_total").value     = String(score);
-    document.getElementById("_gas_form").submit();
-    // Pequeño delay para que el form salga antes de redirigir
-    setTimeout(() => onSent(), 800);
+    const correctos = answers.map((a,i)=>a.selected===questions[i].ok?1:0).join(",");
+    const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
+    const url = GAS_URL + "?" + params.toString();
+
+    // credentials:'omit' evita que Google redirija por sesión activa
+    fetch(url, { mode: "no-cors", credentials: "omit" })
+      .then(() => setTimeout(() => onSent(), 400))
+      .catch(() => setTimeout(() => onSent(), 400)); // igual avanza aunque falle
   };
 
   return <div style={{textAlign:"center",paddingTop:32}}>
@@ -405,14 +406,6 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-
-<!-- Formulario oculto: envía datos a Google Sheets sin bloqueos de CORS -->
-<iframe name="_gas_frame" style="display:none"></iframe>
-<form id="_gas_form" method="GET" action="https://script.google.com/macros/s/AKfycbznCMGSjlPtbtAsxWaxSg0V47YoTFLJuzxARkxE5FFOAK3ieeLW5u4B3oK3s1A09Mns/exec" target="_gas_frame" style="display:none">
-  <input type="hidden" id="_f_nombre"    name="nombre"/>
-  <input type="hidden" id="_f_correctos" name="correctos"/>
-  <input type="hidden" id="_f_total"     name="total"/>
-</form>
 
 </body>
 </html>
