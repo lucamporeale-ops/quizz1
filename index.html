@@ -208,18 +208,7 @@ function Card({ children, color=C.blue, style={} }) {
 function Ground() {
   return <div style={{height:22,background:C.ground,margin:"0 -20px",borderTop:`5px solid ${C.brick}`,backgroundImage:`repeating-linear-gradient(90deg,${C.ground} 0,${C.ground} 34px,${C.brick} 34px,${C.brick} 38px)`}}/>;
 }
-function TimerBar({ secs }) {
-  const pct=(secs/TLIMIT)*100, col=pct>50?C.green:pct>25?C.yellow:C.red;
-  return <div>
-    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-      <span style={{fontFamily:"'Press Start 2P'",fontSize:8,color:col}}>⏱</span>
-      <span style={{fontFamily:"'Press Start 2P'",fontSize:12,color:col,animation:secs<=10?"blink 0.5s step-end infinite":"none"}}>{secs}s</span>
-    </div>
-    <div style={{background:"#111",border:"2px solid #2a2a2a",height:14,borderRadius:2,overflow:"hidden"}}>
-      <div style={{width:`${pct}%`,height:"100%",background:col,boxShadow:`0 0 8px ${col}`,transition:"width 1s linear,background 0.5s",backgroundImage:`repeating-linear-gradient(90deg,${col} 0,${col} 10px,${col}99 10px,${col}99 16px)`}}/>
-    </div>
-  </div>;
-}
+
 
 // ─── PANTALLA: NOMBRE ─────────────────────────────────────────────────────────
 function NameScreen({ onDone }) {
@@ -260,7 +249,7 @@ function ReadyScreen({ playerName, onStart }) {
     <div style={{fontFamily:"'Press Start 2P'",fontSize:9,color:"#555",letterSpacing:2,marginBottom:24}}>DISEÑO DE JUEGOS · PARCIAL 2025</div>
     <div style={{display:"flex",justifyContent:"center",marginBottom:24}}><MarioSprite size={100}/></div>
     <div style={{fontFamily:"'Press Start 2P'",color:C.yellow,fontSize:13,marginBottom:10,textShadow:`3px 3px 0 #000`}}>¡Hola, {playerName}!</div>
-    <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>{TOTAL} preguntas · {TLIMIT} segundos cada una</div>
+    <div style={{fontFamily:"'VT323'",color:"#aaa",fontSize:26,marginBottom:40}}>{TOTAL} preguntas</div>
     <button onClick={onStart} style={{background:C.red,color:C.white,border:`3px solid ${C.redDk}`,boxShadow:`0 6px 0 ${C.redDk}`,fontFamily:"'Press Start 2P'",fontSize:13,padding:"18px 36px",cursor:"pointer",borderRadius:3,letterSpacing:2,opacity:blink?1:0.75,transition:"opacity 0.1s",display:"block",margin:"0 auto"}}>▶ ¿LISTO? ◀</button>
   </div>;
 }
@@ -268,22 +257,18 @@ function ReadyScreen({ playerName, onStart }) {
 // ─── PANTALLA: QUIZ ───────────────────────────────────────────────────────────
 function QuizScreen({ playerName, onFinish }) {
   const [questions]=useState(pickQ);
-  const [qi,setQi]=useState(0), [answers,setAnswers]=useState([]), [secs,setSecs]=useState(TLIMIT), [picked,setPicked]=useState(null);
-  const ivRef=useRef(null), secsRef=useRef(TLIMIT), lockedRef=useRef(false);
+  const [qi,setQi]=useState(0), [answers,setAnswers]=useState([]), [picked,setPicked]=useState(null);
+  const lockedRef=useRef(false);
 
   const advance=(sel)=>{
     if(lockedRef.current) return;
-    lockedRef.current=true; clearInterval(ivRef.current);
-    const na=[...answers,{selected:sel,timedOut:sel===null}];
+    lockedRef.current=true;
+    const na=[...answers,{selected:sel,timedOut:false}];
     if(qi+1>=questions.length){ onFinish(questions,na); return; }
-    setAnswers(na); setPicked(null); setSecs(TLIMIT); secsRef.current=TLIMIT; lockedRef.current=false; setQi(i=>i+1);
+    setAnswers(na); setPicked(null); lockedRef.current=false; setQi(i=>i+1);
   };
 
-  useEffect(()=>{
-    secsRef.current=TLIMIT;
-    ivRef.current=setInterval(()=>{ secsRef.current-=1; setSecs(secsRef.current); if(secsRef.current<=0){clearInterval(ivRef.current);advance(null);} },1000);
-    return()=>clearInterval(ivRef.current);
-  },[qi]);
+  useEffect(()=>{ lockedRef.current=false; },[qi]);
 
   const q=questions[qi];
   const optLabels=["A","B","C","D"];
@@ -295,7 +280,7 @@ function QuizScreen({ playerName, onFinish }) {
     <div style={{background:"#111",border:"2px solid #2a2a2a",height:10,borderRadius:2,marginBottom:14,overflow:"hidden"}}>
       <div style={{width:`${(qi/questions.length)*100}%`,height:"100%",background:C.blue,transition:"width 0.3s",backgroundImage:`repeating-linear-gradient(90deg,${C.blue} 0,${C.blue} 8px,${C.blueDk} 8px,${C.blueDk} 12px)`}}/>
     </div>
-    <TimerBar secs={secs}/>
+
     <div style={{fontFamily:"'Press Start 2P'",fontSize:7,color:"#555",marginTop:12,marginBottom:8,letterSpacing:1}}>{q.t.toUpperCase()}</div>
     <Card color={C.red} style={{marginBottom:16,padding:"20px 18px"}}>
       <div style={{fontFamily:"'VT323'",fontSize:28,color:C.white,lineHeight:1.4}}>{q.q}</div>
