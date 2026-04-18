@@ -399,19 +399,22 @@ function SubmitScreen({ playerName, questions, answers, onSent }) {
   const lc    = pct>=80?C.yellow:pct>=60?C.green:C.red;
   const [sending, setSending] = useState(false);
 
-  const handleEnviar = () => {
-    setSending(true);
-    const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
-    const params = new URLSearchParams({ nombre: playerName, correctos, total: String(score) });
-    const url = GAS_URL + "?" + params.toString();
+ const handleEnviar = () => {
+  setSending(true);
+  const correctos = answers.map((a,i) => a.selected === questions[i].ok ? 1 : 0).join(",");
+  const url = `${GAS_URL}?nombre=${encodeURIComponent(playerName)}&correctos=${correctos}&total=${score}`;
 
-    // ✅ Image() sigue los redirects de Google sin restricciones CORS
-    const img = new Image();
-    img.onload  = () => setTimeout(() => onSent(), 200);
-    img.onerror = () => setTimeout(() => onSent(), 200);
-    img.src = url;
-  };
+  // Usamos un iframe oculto — sigue redirects sin restricciones CORS
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  iframe.onload = () => { document.body.removeChild(iframe); setTimeout(() => onSent(), 200); };
+  iframe.onerror = () => { document.body.removeChild(iframe); setTimeout(() => onSent(), 200); };
 
+  // Fallback por si onload no dispara
+  setTimeout(() => onSent(), 3000);
+};
   return <div style={{textAlign:"center",paddingTop:32}}>
     <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
       <MarioSprite size={90}/>
